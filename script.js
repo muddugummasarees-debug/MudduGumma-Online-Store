@@ -1,9 +1,42 @@
-document.getElementById("year").textContent = new Date().getFullYear();
+// ==========================================
+// MUDDUGUMMA STORE
+// COMPLETE SCRIPT.JS
+// ==========================================
+
+
+// ==========================================
+// YEAR
+// ==========================================
+
+const yearElement = document.getElementById("year");
+
+if (yearElement) {
+  yearElement.textContent = new Date().getFullYear();
+}
+
+
+// ==========================================
+// STORE DATA
+// ==========================================
 
 let storeProducts = [];
-let cart = JSON.parse(
-  localStorage.getItem("muddugummaCart") || "[]"
-);
+
+let cart = [];
+
+try {
+  const savedCart =
+    JSON.parse(
+      localStorage.getItem("muddugummaCart") || "[]"
+    );
+
+  cart = Array.isArray(savedCart)
+    ? savedCart
+    : [];
+
+} catch (error) {
+  console.error("Could not load cart:", error);
+  cart = [];
+}
 
 
 // ==========================================
@@ -11,15 +44,74 @@ let cart = JSON.parse(
 // ==========================================
 
 async function loadProducts() {
+
   try {
-    const response = await fetch("/api/products");
-    storeProducts = await response.json();
+
+    const response =
+      await fetch("/api/products", {
+        cache: "no-store"
+      });
+
+
+    if (!response.ok) {
+      throw new Error(
+        "Could not load products."
+      );
+    }
+
+
+    const products =
+      await response.json();
+
+
+    storeProducts =
+      Array.isArray(products)
+        ? products
+        : [];
+
 
     renderProducts();
     updateCartCount();
+    renderCart();
+
   } catch (error) {
-    console.error("Could not load products:", error);
+
+    console.error(
+      "Could not load products:",
+      error
+    );
+
+
+    storeProducts = [];
+
+
+    const grid =
+      document.getElementById(
+        "productGrid"
+      );
+
+
+    if (grid) {
+
+      grid.innerHTML = `
+        <div class="empty-products">
+
+          <h3>
+            New collection coming soon
+          </h3>
+
+          <p>
+            Beautiful MudduGumma sarees
+            will be available here soon.
+          </p>
+
+        </div>
+      `;
+
+    }
+
   }
+
 }
 
 
@@ -28,155 +120,277 @@ async function loadProducts() {
 // ==========================================
 
 function renderProducts() {
-  const grid = document.getElementById("productGrid");
 
-  if (!grid) return;
+  const grid =
+    document.getElementById(
+      "productGrid"
+    );
 
-  if (!storeProducts.length) {
-    grid.innerHTML = `
-      <div class="empty-products">
-        <h3>New collection coming soon</h3>
-        <p>Beautiful MudduGumma sarees will be available here soon.</p>
-      </div>
-    `;
+
+  if (!grid) {
     return;
   }
 
-  grid.innerHTML = storeProducts.map(product => {
 
-    const images =
-      Array.isArray(product.images) && product.images.length
-        ? product.images
-        : product.image
-        ? [product.image]
-        : [];
+  if (!storeProducts.length) {
 
-    const mainImage = images[0] || "";
+    grid.innerHTML = `
+      <div class="empty-products">
 
-    const oldPrice =
-      Number(product.oldPrice) > Number(product.price)
-        ? `
-          <span class="old-price">
-            ₹${Number(product.oldPrice).toLocaleString("en-IN")}
-          </span>
-        `
-        : "";
+        <h3>
+          New collection coming soon
+        </h3>
 
-    const stock =
-      Number(product.stock) > 0
-        ? `<span class="in-stock">In Stock</span>`
-        : `<span class="out-stock">Out of Stock</span>`;
+        <p>
+          Beautiful MudduGumma sarees
+          will be available here soon.
+        </p>
 
-    const thumbnails =
-      images.length > 1
-        ? `
-          <div class="product-thumbnails">
-            ${images.map(img => `
-              <img
-                src="${img}"
-                alt="${escapeHTML(product.name)}"
-                onclick="changeProductImage(this)"
-              >
-            `).join("")}
-          </div>
-        `
-        : "";
-
-    return `
-      <article class="product-card">
-
-        <div class="product-image-wrap">
-          ${
-            mainImage
-              ? `
-                <img
-                  class="product-image"
-                  src="${mainImage}"
-                  alt="${escapeHTML(product.name)}"
-                >
-              `
-              : `
-                <div class="product-no-image">
-                  No image
-                </div>
-              `
-          }
-        </div>
-
-        ${thumbnails}
-
-        <div class="product-info">
-
-          <h3>${escapeHTML(product.name)}</h3>
-
-          <div class="product-price">
-            <strong>
-              ₹${Number(product.price).toLocaleString("en-IN")}
-            </strong>
-
-            ${oldPrice}
-          </div>
-
-          ${stock}
-
-          ${
-            product.colors && product.colors.length
-              ? `
-                <div class="product-colors">
-                  <b>Colors:</b>
-                  ${product.colors.map(escapeHTML).join(", ")}
-                </div>
-              `
-              : ""
-          }
-
-          ${
-            product.description
-              ? `
-                <p class="product-description">
-                  ${escapeHTML(product.description)}
-                </p>
-              `
-              : ""
-          }
-
-          ${
-            Number(product.stock) > 0
-              ? `
-                <div class="shop-buttons">
-
-                  <button
-                    class="button add-cart-btn"
-                    onclick="addToCart('${product.id}')"
-                  >
-                    Add to Cart
-                  </button>
-
-                  <button
-                    class="button buy-now-btn"
-                    onclick="buyNow('${product.id}')"
-                  >
-                    Buy Now
-                  </button>
-
-                </div>
-              `
-              : `
-                <button
-                  class="button sold-btn"
-                  disabled
-                >
-                  Sold Out
-                </button>
-              `
-          }
-
-        </div>
-
-      </article>
+      </div>
     `;
 
-  }).join("");
+    return;
+  }
+
+
+  grid.innerHTML =
+    storeProducts
+      .map(product => {
+
+
+        const images =
+          Array.isArray(product.images) &&
+          product.images.length
+            ? product.images
+            : product.image
+            ? [product.image]
+            : [];
+
+
+        const mainImage =
+          images[0] || "";
+
+
+        const productName =
+          escapeHTML(
+            product.name ||
+            "MudduGumma Saree"
+          );
+
+
+        const price =
+          Number(
+            product.price || 0
+          );
+
+
+        const oldPriceValue =
+          Number(
+            product.oldPrice || 0
+          );
+
+
+        const oldPrice =
+          oldPriceValue > price
+            ? `
+              <span class="old-price">
+
+                ₹${oldPriceValue
+                  .toLocaleString(
+                    "en-IN"
+                  )}
+
+              </span>
+            `
+            : "";
+
+
+        const stock =
+          Number(
+            product.stock || 0
+          );
+
+
+        const stockLabel =
+          stock > 0
+            ? `
+              <span class="in-stock">
+                In Stock
+              </span>
+            `
+            : `
+              <span class="out-stock">
+                Out of Stock
+              </span>
+            `;
+
+
+        const thumbnails =
+          images.length > 1
+            ? `
+              <div class="product-thumbnails">
+
+                ${images
+                  .map(img => `
+
+                    <img
+                      src="${escapeAttribute(img)}"
+                      alt="${productName}"
+                      onclick="changeProductImage(this)"
+                    >
+
+                  `)
+                  .join("")}
+
+              </div>
+            `
+            : "";
+
+
+        const colors =
+          Array.isArray(product.colors)
+            ? product.colors
+            : [];
+
+
+        return `
+
+          <article class="product-card">
+
+            <div class="product-image-wrap">
+
+              ${
+                mainImage
+                  ? `
+                    <img
+                      class="product-image"
+                      src="${escapeAttribute(mainImage)}"
+                      alt="${productName}"
+                    >
+                  `
+                  : `
+                    <div class="product-no-image">
+                      No image
+                    </div>
+                  `
+              }
+
+            </div>
+
+
+            ${thumbnails}
+
+
+            <div class="product-info">
+
+              <h3>
+                ${productName}
+              </h3>
+
+
+              <div class="product-price">
+
+                <strong>
+                  ₹${price.toLocaleString(
+                    "en-IN"
+                  )}
+                </strong>
+
+                ${oldPrice}
+
+              </div>
+
+
+              ${stockLabel}
+
+
+              ${
+                colors.length
+                  ? `
+                    <div class="product-colors">
+
+                      <b>
+                        Colors:
+                      </b>
+
+                      ${colors
+                        .map(
+                          color =>
+                            escapeHTML(
+                              color
+                            )
+                        )
+                        .join(", ")}
+
+                    </div>
+                  `
+                  : ""
+              }
+
+
+              ${
+                product.description
+                  ? `
+                    <p class="product-description">
+
+                      ${escapeHTML(
+                        product.description
+                      )}
+
+                    </p>
+                  `
+                  : ""
+              }
+
+
+              ${
+                stock > 0
+                  ? `
+                    <div class="shop-buttons">
+
+                      <button
+                        type="button"
+                        class="button add-cart-btn"
+                        onclick="addToCart('${escapeJS(
+                          product.id
+                        )}')"
+                      >
+                        Add to Cart
+                      </button>
+
+
+                      <button
+                        type="button"
+                        class="button buy-now-btn"
+                        onclick="buyNow('${escapeJS(
+                          product.id
+                        )}')"
+                      >
+                        Buy Now
+                      </button>
+
+                    </div>
+                  `
+                  : `
+                    <button
+                      type="button"
+                      class="button sold-btn"
+                      disabled
+                    >
+                      Sold Out
+                    </button>
+                  `
+              }
+
+            </div>
+
+          </article>
+
+        `;
+
+      })
+      .join("");
+
 }
 
 
@@ -184,13 +398,37 @@ function renderProducts() {
 // CHANGE PRODUCT IMAGE
 // ==========================================
 
-function changeProductImage(thumbnail) {
-  const card = thumbnail.closest(".product-card");
-  const mainImage = card.querySelector(".product-image");
+function changeProductImage(
+  thumbnail
+) {
+
+  if (!thumbnail) {
+    return;
+  }
+
+
+  const card =
+    thumbnail.closest(
+      ".product-card"
+    );
+
+
+  if (!card) {
+    return;
+  }
+
+
+  const mainImage =
+    card.querySelector(
+      ".product-image"
+    );
+
 
   if (mainImage) {
-    mainImage.src = thumbnail.src;
+    mainImage.src =
+      thumbnail.src;
   }
+
 }
 
 
@@ -199,43 +437,111 @@ function changeProductImage(thumbnail) {
 // ==========================================
 
 function addToCart(productId) {
-  const product = storeProducts.find(
-    product => product.id === productId
-  );
 
-  if (!product) return;
+  const product =
+    storeProducts.find(
+      product =>
+        String(product.id) ===
+        String(productId)
+    );
 
-  if (Number(product.stock) <= 0) {
-    alert("Sorry, this saree is currently out of stock.");
+
+  if (!product) {
+
+    alert(
+      "This product could not be found."
+    );
+
     return;
+
   }
 
-  const existing = cart.find(
-    item => item.id === productId
-  );
+
+  const availableStock =
+    Number(
+      product.stock || 0
+    );
+
+
+  if (availableStock <= 0) {
+
+    alert(
+      "Sorry, this saree is currently out of stock."
+    );
+
+    return;
+
+  }
+
+
+  const existing =
+    cart.find(
+      item =>
+        String(item.id) ===
+        String(productId)
+    );
+
 
   if (existing) {
-    if (existing.quantity >= Number(product.stock)) {
-      alert("You have reached the available stock quantity.");
+
+    if (
+      Number(existing.quantity) >=
+      availableStock
+    ) {
+
+      alert(
+        "You have reached the available stock quantity."
+      );
+
       return;
+
     }
 
-    existing.quantity += 1;
+
+    existing.quantity =
+      Number(
+        existing.quantity || 0
+      ) + 1;
+
   } else {
+
+    const images =
+      Array.isArray(
+        product.images
+      )
+        ? product.images
+        : [];
+
+
     cart.push({
-      id: product.id,
-      name: product.name,
-      price: Number(product.price),
+
+      id:
+        product.id,
+
+      name:
+        product.name,
+
+      price:
+        Number(
+          product.price || 0
+        ),
+
       image:
-        Array.isArray(product.images) && product.images.length
-          ? product.images[0]
+        images.length
+          ? images[0]
           : product.image || "",
+
       quantity: 1
+
     });
+
   }
 
+
   saveCart();
+
   openCart();
+
 }
 
 
@@ -244,37 +550,92 @@ function addToCart(productId) {
 // ==========================================
 
 function buyNow(productId) {
-  const product = storeProducts.find(
-    product => product.id === productId
-  );
 
-  if (!product) return;
+  const product =
+    storeProducts.find(
+      product =>
+        String(product.id) ===
+        String(productId)
+    );
 
-  if (Number(product.stock) <= 0) {
-    alert("Sorry, this saree is currently out of stock.");
+
+  if (!product) {
+
+    alert(
+      "This product could not be found."
+    );
+
     return;
+
   }
 
-  const existing = cart.find(
-    item => item.id === productId
-  );
+
+  const availableStock =
+    Number(
+      product.stock || 0
+    );
+
+
+  if (availableStock <= 0) {
+
+    alert(
+      "Sorry, this saree is currently out of stock."
+    );
+
+    return;
+
+  }
+
+
+  const existing =
+    cart.find(
+      item =>
+        String(item.id) ===
+        String(productId)
+    );
+
 
   if (!existing) {
+
+    const images =
+      Array.isArray(
+        product.images
+      )
+        ? product.images
+        : [];
+
+
     cart.push({
-      id: product.id,
-      name: product.name,
-      price: Number(product.price),
+
+      id:
+        product.id,
+
+      name:
+        product.name,
+
+      price:
+        Number(
+          product.price || 0
+        ),
+
       image:
-        Array.isArray(product.images) && product.images.length
-          ? product.images[0]
+        images.length
+          ? images[0]
           : product.image || "",
+
       quantity: 1
+
     });
+
   }
+
 
   saveCart();
 
-  window.location.href = "/checkout.html";
+
+  window.location.href =
+    "/checkout.html";
+
 }
 
 
@@ -283,13 +644,27 @@ function buyNow(productId) {
 // ==========================================
 
 function saveCart() {
-  localStorage.setItem(
-    "muddugummaCart",
-    JSON.stringify(cart)
-  );
+
+  try {
+
+    localStorage.setItem(
+      "muddugummaCart",
+      JSON.stringify(cart)
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Could not save cart:",
+      error
+    );
+
+  }
+
 
   updateCartCount();
   renderCart();
+
 }
 
 
@@ -298,16 +673,32 @@ function saveCart() {
 // ==========================================
 
 function updateCartCount() {
-  const count = cart.reduce(
-    (total, item) => total + Number(item.quantity || 0),
-    0
-  );
 
-  const element = document.getElementById("cartCount");
+  const count =
+    cart.reduce(
+      (
+        total,
+        item
+      ) =>
+        total +
+        Number(
+          item.quantity || 0
+        ),
+      0
+    );
+
+
+  const element =
+    document.getElementById(
+      "cartCount"
+    );
+
 
   if (element) {
-    element.textContent = count;
+    element.textContent =
+      count;
   }
+
 }
 
 
@@ -316,20 +707,69 @@ function updateCartCount() {
 // ==========================================
 
 function openCart() {
+
   renderCart();
 
-  const drawer = document.getElementById("cartDrawer");
-  const overlay = document.getElementById("cartOverlay");
 
-  if (drawer) {
-    drawer.classList.add("open");
+  const drawer =
+    document.getElementById(
+      "cartDrawer"
+    );
+
+
+  const overlay =
+    document.getElementById(
+      "cartOverlay"
+    );
+
+
+  if (!drawer) {
+
+    console.error(
+      "Cart drawer was not found."
+    );
+
+    return;
+
   }
+
+
+  drawer.classList.add(
+    "open"
+  );
+
+
+  /*
+    These inline styles are a backup.
+    Even if Chrome has cached an older
+    CSS file, the drawer should open.
+  */
+
+  drawer.style.transform =
+    "translateX(0)";
+
+  drawer.style.visibility =
+    "visible";
+
 
   if (overlay) {
-    overlay.classList.add("show");
+
+    overlay.classList.add(
+      "show"
+    );
+
+    overlay.style.opacity =
+      "1";
+
+    overlay.style.visibility =
+      "visible";
+
   }
 
-  document.body.style.overflow = "hidden";
+
+  document.body.style.overflow =
+    "hidden";
+
 }
 
 
@@ -338,18 +778,52 @@ function openCart() {
 // ==========================================
 
 function closeCart() {
-  const drawer = document.getElementById("cartDrawer");
-  const overlay = document.getElementById("cartOverlay");
+
+  const drawer =
+    document.getElementById(
+      "cartDrawer"
+    );
+
+
+  const overlay =
+    document.getElementById(
+      "cartOverlay"
+    );
+
 
   if (drawer) {
-    drawer.classList.remove("open");
+
+    drawer.classList.remove(
+      "open"
+    );
+
+    drawer.style.transform =
+      "";
+
+    drawer.style.visibility =
+      "";
+
   }
+
 
   if (overlay) {
-    overlay.classList.remove("show");
+
+    overlay.classList.remove(
+      "show"
+    );
+
+    overlay.style.opacity =
+      "";
+
+    overlay.style.visibility =
+      "";
+
   }
 
-  document.body.style.overflow = "";
+
+  document.body.style.overflow =
+    "";
+
 }
 
 
@@ -358,95 +832,195 @@ function closeCart() {
 // ==========================================
 
 function renderCart() {
-  const container = document.getElementById("cartItems");
-  const totalElement = document.getElementById("cartTotal");
 
-  if (!container || !totalElement) return;
+  const container =
+    document.getElementById(
+      "cartItems"
+    );
 
-  if (!cart.length) {
-    container.innerHTML = `
-      <div class="empty-cart">
-        <div class="empty-cart-icon">♡</div>
 
-        <h3>Your cart is empty</h3>
+  const totalElement =
+    document.getElementById(
+      "cartTotal"
+    );
 
-        <p>
-          Add your favourite MudduGumma sarees
-          to begin shopping.
-        </p>
-      </div>
-    `;
 
-    totalElement.textContent = "₹0";
+  if (
+    !container ||
+    !totalElement
+  ) {
+
     return;
+
   }
 
-  container.innerHTML = cart.map(item => `
-    <div class="cart-item">
 
-      ${
-        item.image
-          ? `
-            <img
-              src="${item.image}"
-              alt="${escapeHTML(item.name)}"
-            >
-          `
-          : ""
-      }
+  if (!cart.length) {
 
-      <div class="cart-item-info">
+    container.innerHTML = `
 
-        <strong>
-          ${escapeHTML(item.name)}
-        </strong>
+      <div class="empty-cart">
 
-        <span>
-          ₹${Number(item.price).toLocaleString("en-IN")}
-        </span>
-
-        <div class="quantity-controls">
-
-          <button
-            onclick="changeQuantity('${item.id}', -1)"
-          >
-            −
-          </button>
-
-          <span>
-            ${item.quantity}
-          </span>
-
-          <button
-            onclick="changeQuantity('${item.id}', 1)"
-          >
-            +
-          </button>
-
+        <div class="empty-cart-icon">
+          ♡
         </div>
 
-        <button
-          class="remove-item"
-          onclick="removeFromCart('${item.id}')"
-        >
-          Remove
-        </button>
+        <h3>
+          Your cart is empty
+        </h3>
+
+        <p>
+          Add your favourite
+          MudduGumma sarees
+          to begin shopping.
+        </p>
 
       </div>
 
-    </div>
-  `).join("");
+    `;
 
-  const total = cart.reduce(
-    (sum, item) =>
-      sum +
-      Number(item.price) *
-      Number(item.quantity),
-    0
-  );
+
+    totalElement.textContent =
+      "₹0";
+
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    cart
+      .map(item => {
+
+
+        const quantity =
+          Math.max(
+            1,
+            Number(
+              item.quantity || 1
+            )
+          );
+
+
+        return `
+
+          <div class="cart-item">
+
+            ${
+              item.image
+                ? `
+                  <img
+                    src="${escapeAttribute(
+                      item.image
+                    )}"
+                    alt="${escapeHTML(
+                      item.name
+                    )}"
+                  >
+                `
+                : ""
+            }
+
+
+            <div class="cart-item-info">
+
+              <strong>
+                ${escapeHTML(
+                  item.name
+                )}
+              </strong>
+
+
+              <span>
+                ₹${Number(
+                  item.price || 0
+                ).toLocaleString(
+                  "en-IN"
+                )}
+              </span>
+
+
+              <div class="quantity-controls">
+
+                <button
+                  type="button"
+                  onclick="changeQuantity(
+                    '${escapeJS(
+                      item.id
+                    )}',
+                    -1
+                  )"
+                >
+                  −
+                </button>
+
+
+                <span>
+                  ${quantity}
+                </span>
+
+
+                <button
+                  type="button"
+                  onclick="changeQuantity(
+                    '${escapeJS(
+                      item.id
+                    )}',
+                    1
+                  )"
+                >
+                  +
+                </button>
+
+              </div>
+
+
+              <button
+                type="button"
+                class="remove-item"
+                onclick="removeFromCart(
+                  '${escapeJS(
+                    item.id
+                  )}'
+                )"
+              >
+                Remove
+              </button>
+
+            </div>
+
+          </div>
+
+        `;
+
+      })
+      .join("");
+
+
+  const total =
+    cart.reduce(
+      (
+        sum,
+        item
+      ) =>
+        sum +
+        Number(
+          item.price || 0
+        ) *
+        Number(
+          item.quantity || 0
+        ),
+      0
+    );
+
 
   totalElement.textContent =
-    "₹" + total.toLocaleString("en-IN");
+    "₹" +
+    total.toLocaleString(
+      "en-IN"
+    );
+
 }
 
 
@@ -454,39 +1028,77 @@ function renderCart() {
 // CHANGE QUANTITY
 // ==========================================
 
-function changeQuantity(productId, amount) {
-  const item = cart.find(
-    item => item.id === productId
-  );
+function changeQuantity(
+  productId,
+  amount
+) {
 
-  if (!item) return;
+  const item =
+    cart.find(
+      item =>
+        String(item.id) ===
+        String(productId)
+    );
 
-  const product = storeProducts.find(
-    product => product.id === productId
-  );
+
+  if (!item) {
+    return;
+  }
+
+
+  const product =
+    storeProducts.find(
+      product =>
+        String(product.id) ===
+        String(productId)
+    );
+
 
   if (
     amount > 0 &&
     product &&
-    item.quantity >= Number(product.stock)
+    Number(item.quantity) >=
+      Number(
+        product.stock || 0
+      )
   ) {
+
     alert(
       "Only " +
-      product.stock +
+      Number(
+        product.stock || 0
+      ) +
       " piece(s) available."
     );
+
     return;
+
   }
 
-  item.quantity += amount;
 
-  if (item.quantity <= 0) {
-    cart = cart.filter(
-      item => item.id !== productId
-    );
+  item.quantity =
+    Number(
+      item.quantity || 1
+    ) +
+    Number(amount);
+
+
+  if (
+    item.quantity <= 0
+  ) {
+
+    cart =
+      cart.filter(
+        item =>
+          String(item.id) !==
+          String(productId)
+      );
+
   }
+
 
   saveCart();
+
 }
 
 
@@ -494,12 +1106,20 @@ function changeQuantity(productId, amount) {
 // REMOVE PRODUCT
 // ==========================================
 
-function removeFromCart(productId) {
-  cart = cart.filter(
-    item => item.id !== productId
-  );
+function removeFromCart(
+  productId
+) {
+
+  cart =
+    cart.filter(
+      item =>
+        String(item.id) !==
+        String(productId)
+    );
+
 
   saveCart();
+
 }
 
 
@@ -508,12 +1128,24 @@ function removeFromCart(productId) {
 // ==========================================
 
 function goToCheckout() {
+
   if (!cart.length) {
-    alert("Your cart is empty.");
+
+    alert(
+      "Your cart is empty."
+    );
+
     return;
+
   }
 
-  window.location.href = "/checkout.html";
+
+  saveCart();
+
+
+  window.location.href =
+    "/checkout.html";
+
 }
 
 
@@ -521,31 +1153,56 @@ function goToCheckout() {
 // NOTIFY FORM
 // ==========================================
 
-const notifyForm = document.getElementById("notifyForm");
+const notifyForm =
+  document.getElementById(
+    "notifyForm"
+  );
+
 
 if (notifyForm) {
+
   notifyForm.addEventListener(
     "submit",
     function(event) {
+
       event.preventDefault();
 
-      const name =
-        document
-          .getElementById("name")
-          .value
-          .trim();
+
+      const nameInput =
+        document.getElementById(
+          "name"
+        );
+
 
       const message =
-        document.getElementById("formMessage");
+        document.getElementById(
+          "formMessage"
+        );
 
-      message.textContent =
-        `Thank you${
-          name ? ", " + name : ""
-        }! We'll keep you posted about new collections and offers.`;
+
+      const name =
+        nameInput
+          ? nameInput.value.trim()
+          : "";
+
+
+      if (message) {
+
+        message.textContent =
+          `Thank you${
+            name
+              ? ", " + name
+              : ""
+          }! We'll keep you posted about new collections and offers.`;
+
+      }
+
 
       this.reset();
+
     }
   );
+
 }
 
 
@@ -554,7 +1211,10 @@ if (notifyForm) {
 // ==========================================
 
 function escapeHTML(value) {
-  return String(value || "").replace(
+
+  return String(
+    value || ""
+  ).replace(
     /[&<>"']/g,
     character => ({
       "&": "&amp;",
@@ -564,13 +1224,77 @@ function escapeHTML(value) {
       "'": "&#039;"
     })[character]
   );
+
 }
+
+
+function escapeAttribute(value) {
+
+  return escapeHTML(
+    value
+  );
+
+}
+
+
+function escapeJS(value) {
+
+  return String(
+    value || ""
+  )
+    .replace(
+      /\\/g,
+      "\\\\"
+    )
+    .replace(
+      /'/g,
+      "\\'"
+    )
+    .replace(
+      /\r/g,
+      "\\r"
+    )
+    .replace(
+      /\n/g,
+      "\\n"
+    );
+
+}
+
+
+// ==========================================
+// MAKE FUNCTIONS AVAILABLE TO HTML BUTTONS
+// ==========================================
+
+window.openCart =
+  openCart;
+
+window.closeCart =
+  closeCart;
+
+window.addToCart =
+  addToCart;
+
+window.buyNow =
+  buyNow;
+
+window.changeQuantity =
+  changeQuantity;
+
+window.removeFromCart =
+  removeFromCart;
+
+window.goToCheckout =
+  goToCheckout;
+
+window.changeProductImage =
+  changeProductImage;
 
 
 // ==========================================
 // START STORE
 // ==========================================
 
-loadProducts();
 updateCartCount();
 renderCart();
+loadProducts();
