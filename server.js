@@ -14,6 +14,12 @@ const PRODUCTS = path.join(DATA, "products.json");
 const USERS = path.join(DATA, "users.json");
 const ORDERS = path.join(DATA, "orders.json");
 
+const ADMIN_USERNAME =
+  process.env.ADMIN_USERNAME || "admin";
+
+const ADMIN_PASSWORD =
+  process.env.ADMIN_PASSWORD || "";
+
 const RAZORPAY_KEY_ID =
   process.env.RAZORPAY_KEY_ID || "";
 
@@ -42,10 +48,10 @@ function writeJSON(file, value) {
   );
 }
 
-function sha256(s) {
+function sha256(value) {
   return crypto
     .createHash("sha256")
-    .update(s)
+    .update(String(value))
     .digest("hex");
 }
 
@@ -57,27 +63,20 @@ if (!fs.existsSync(ORDERS)) {
   writeJSON(ORDERS, []);
 }
 
-if (!fs.existsSync(USERS)) {
-  writeJSON(USERS, [
-    {
-      username: "admin",
-      passwordHash: sha256("admin123")
-    }
-  ]);
-}
-
 function parseCookies(req) {
   const out = {};
 
   (req.headers.cookie || "")
     .split(";")
-    .forEach(x => {
-      const i = x.indexOf("=");
+    .forEach(item => {
+      const i = item.indexOf("=");
 
       if (i > 0) {
-        out[x.slice(0, i).trim()] =
+        out[
+          item.slice(0, i).trim()
+        ] =
           decodeURIComponent(
-            x.slice(i + 1)
+            item.slice(i + 1)
           );
       }
     });
@@ -120,35 +119,44 @@ function json(res, status, obj) {
 function body(req) {
   return new Promise(
     (resolve, reject) => {
-      let b = "";
+      let data = "";
 
-      req.on("data", chunk => {
-        b += chunk;
+      req.on(
+        "data",
+        chunk => {
+          data += chunk;
 
-        if (
-          b.length >
-          50 * 1024 * 1024
-        ) {
-          req.destroy();
+          if (
+            data.length >
+            50 * 1024 * 1024
+          ) {
+            req.destroy();
+          }
         }
-      });
+      );
 
-      req.on("end", () => {
-        try {
-          resolve(
-            b
-              ? JSON.parse(b)
-              : {}
-          );
-        } catch (e) {
-          reject(e);
+      req.on(
+        "end",
+        () => {
+          try {
+            resolve(
+              data
+                ? JSON.parse(data)
+                : {}
+            );
+          } catch (e) {
+            reject(e);
+          }
         }
-      });
+      );
     }
   );
 }
 
-function cleanText(value, max = 300) {
+function cleanText(
+  value,
+  max = 300
+) {
   return String(value || "")
     .trim()
     .slice(0, max);
@@ -197,6 +205,7 @@ function createRazorpayOrder({
                 )
             }
           },
+
           response => {
             let data = "";
 
@@ -222,10 +231,8 @@ function createRazorpayOrder({
                 }
 
                 if (
-                  response.statusCode >=
-                    200 &&
-                  response.statusCode <
-                    300
+                  response.statusCode >= 200 &&
+                  response.statusCode < 300
                 ) {
                   resolve(parsed);
                 } else {
@@ -233,7 +240,7 @@ function createRazorpayOrder({
                     new Error(
                       parsed?.error
                         ?.description ||
-                        "Could not create Razorpay order"
+                      "Could not create Razorpay order"
                     )
                   );
                 }
@@ -290,7 +297,8 @@ async function route(req, res) {
       `http://${req.headers.host}`
     );
 
-  const p = url.pathname;
+  const p =
+    url.pathname;
 
   // =====================================
   // ADMIN LOGIN
@@ -300,26 +308,38 @@ async function route(req, res) {
     req.method === "POST" &&
     p === "/api/login"
   ) {
-    const b = await body(req);
+    if (!ADMIN_PASSWORD) {
+      return json(
+        res,
+        503,
+        {
+          ok: false,
+          error:
+            "Admin login is not configured yet."
+        }
+      );
+    }
 
-    const users =
-      readJSON(
-        USERS,
-        []
+    const b =
+      await body(req);
+
+    const username =
+      cleanText(
+        b.username,
+        100
       );
 
-    const u =
-      users.find(
-        x =>
-          x.username ===
-            b.username &&
-          x.passwordHash ===
-            sha256(
-              b.password || ""
-            )
+    const password =
+      String(
+        b.password || ""
       );
 
-    if (!u) {
+    if (
+      username !==
+        ADMIN_USERNAME ||
+      password !==
+        ADMIN_PASSWORD
+    ) {
       return json(
         res,
         401,
@@ -339,9 +359,7 @@ async function route(req, res) {
     SESSIONS.set(
       sid,
       {
-        username:
-          u.username,
-
+        username,
         created:
           Date.now()
       }
@@ -457,9 +475,7 @@ async function route(req, res) {
       Array.isArray(
         b.images
       )
-        ? b.images.filter(
-            Boolean
-          )
+        ? b.images.filter(Boolean)
         : (
             b.image
               ? [b.image]
@@ -482,19 +498,13 @@ async function route(req, res) {
         "New Arrivals",
 
       price:
-        Number(
-          b.price
-        ) || 0,
+        Number(b.price) || 0,
 
       oldPrice:
-        Number(
-          b.oldPrice
-        ) || 0,
+        Number(b.oldPrice) || 0,
 
       stock:
-        Number(
-          b.stock
-        ) || 0,
+        Number(b.stock) || 0,
 
       sizes:
         Array.isArray(
@@ -521,8 +531,8 @@ async function route(req, res) {
 
     const idx =
       arr.findIndex(
-        x =>
-          x.id ===
+        item =>
+          item.id ===
           product.id
       );
 
@@ -549,8 +559,7 @@ async function route(req, res) {
     p.startsWith(
       "/api/products/"
     ) &&
-    req.method ===
-      "DELETE"
+    req.method === "DELETE"
   ) {
     if (!isAuthed(req)) {
       return json(
@@ -574,8 +583,8 @@ async function route(req, res) {
         PRODUCTS,
         []
       ).filter(
-        x =>
-          x.id !== id
+        item =>
+          item.id !== id
       );
 
     writeJSON(
@@ -631,13 +640,13 @@ async function route(req, res) {
       );
     }
 
-    const m =
+    const match =
       String(b.data)
         .match(
           /^data:([^;]+);base64,(.+)$/
         );
 
-    if (!m) {
+    if (!match) {
       return json(
         res,
         400,
@@ -661,7 +670,7 @@ async function route(req, res) {
 
         "image/gif":
           ".gif"
-      })[m[1]] ||
+      })[match[1]] ||
       ".bin";
 
     const name =
@@ -677,8 +686,9 @@ async function route(req, res) {
         UPLOADS,
         name
       ),
+
       Buffer.from(
-        m[2],
+        match[2],
         "base64"
       )
     );
@@ -695,7 +705,7 @@ async function route(req, res) {
   }
 
   // =====================================
-  // RAZORPAY PUBLIC CONFIG
+  // RAZORPAY CONFIG
   // =====================================
 
   if (
@@ -714,12 +724,11 @@ async function route(req, res) {
   }
 
   // =====================================
-  // CREATE CHECKOUT ORDER
+  // CREATE PAYMENT ORDER
   // =====================================
 
   if (
-    p ===
-      "/api/create-order" &&
+    p === "/api/create-order" &&
     req.method === "POST"
   ) {
     if (
@@ -755,39 +764,6 @@ async function route(req, res) {
       );
     }
 
-    const customer =
-      b.customer || {};
-
-    const requiredFields = [
-      "name",
-      "mobile",
-      "email",
-      "address",
-      "city",
-      "state",
-      "pincode"
-    ];
-
-    for (
-      const field
-      of requiredFields
-    ) {
-      if (
-        !cleanText(
-          customer[field]
-        )
-      ) {
-        return json(
-          res,
-          400,
-          {
-            error:
-              `Please enter ${field}.`
-          }
-        );
-      }
-    }
-
     const products =
       readJSON(
         PRODUCTS,
@@ -804,8 +780,8 @@ async function route(req, res) {
     ) {
       const product =
         products.find(
-          x =>
-            x.id ===
+          item =>
+            item.id ===
             cartItem.id
         );
 
@@ -823,35 +799,32 @@ async function route(req, res) {
       const quantity =
         Math.max(
           1,
-          Math.floor(
-            Number(
-              cartItem.quantity
-            ) || 1
-          )
+          Number(
+            cartItem.quantity
+          ) || 1
         );
 
       if (
+        quantity >
         Number(
           product.stock
-        ) < quantity
+        )
       ) {
         return json(
           res,
           400,
           {
             error:
-              `${product.name} has only ${product.stock} piece(s) available.`
+              `${product.name} does not have enough stock.`
           }
         );
       }
 
-      const price =
+      totalRupees +=
         Number(
           product.price
-        );
-
-      totalRupees +=
-        price * quantity;
+        ) *
+        quantity;
 
       orderItems.push({
         id:
@@ -860,177 +833,88 @@ async function route(req, res) {
         name:
           product.name,
 
-        price,
+        price:
+          Number(
+            product.price
+          ),
 
-        quantity,
-
-        image:
-          Array.isArray(
-            product.images
-          ) &&
-          product.images.length
-            ? product.images[0]
-            : product.image || ""
+        quantity
       });
     }
 
     const amountPaise =
       Math.round(
-        totalRupees * 100
+        totalRupees *
+        100
       );
-
-    if (
-      !Number.isInteger(
-        amountPaise
-      ) ||
-      amountPaise <= 0
-    ) {
-      return json(
-        res,
-        400,
-        {
-          error:
-            "Invalid order amount."
-        }
-      );
-    }
 
     const localOrderId =
       "MGORDER-" +
-      Date.now() +
-      "-" +
-      crypto
-        .randomBytes(3)
-        .toString("hex");
+      Date.now();
 
-    try {
-      const razorpayOrder =
-        await createRazorpayOrder({
-          amount:
-            amountPaise,
+    const razorpayOrder =
+      await createRazorpayOrder({
+        amount:
+          amountPaise,
 
-          receipt:
-            localOrderId
-              .slice(0, 40)
-        });
+        receipt:
+          localOrderId
+      });
 
-      const orders =
-        readJSON(
-          ORDERS,
-          []
-        );
+    const orders =
+      readJSON(
+        ORDERS,
+        []
+      );
 
-      orders.push({
-        id:
-          localOrderId,
+    orders.push({
+      id:
+        localOrderId,
+
+      razorpayOrderId:
+        razorpayOrder.id,
+
+      amount:
+        totalRupees,
+
+      items:
+        orderItems,
+
+      customer:
+        b.customer || {},
+
+      status:
+        "created",
+
+      createdAt:
+        new Date()
+          .toISOString()
+    });
+
+    writeJSON(
+      ORDERS,
+      orders
+    );
+
+    return json(
+      res,
+      200,
+      {
+        keyId:
+          RAZORPAY_KEY_ID,
+
+        amount:
+          razorpayOrder.amount,
+
+        currency:
+          razorpayOrder.currency,
 
         razorpayOrderId:
           razorpayOrder.id,
 
-        status:
-          "payment_pending",
-
-        amount:
-          totalRupees,
-
-        amountPaise,
-
-        currency:
-          "INR",
-
-        items:
-          orderItems,
-
-        customer: {
-          name:
-            cleanText(
-              customer.name,
-              100
-            ),
-
-          mobile:
-            cleanText(
-              customer.mobile,
-              20
-            ),
-
-          email:
-            cleanText(
-              customer.email,
-              150
-            ),
-
-          address:
-            cleanText(
-              customer.address,
-              500
-            ),
-
-          city:
-            cleanText(
-              customer.city,
-              100
-            ),
-
-          state:
-            cleanText(
-              customer.state,
-              100
-            ),
-
-          pincode:
-            cleanText(
-              customer.pincode,
-              20
-            )
-        },
-
-        createdAt:
-          new Date()
-            .toISOString()
-      });
-
-      writeJSON(
-        ORDERS,
-        orders
-      );
-
-      return json(
-        res,
-        200,
-        {
-          ok: true,
-
-          localOrderId,
-
-          razorpayOrderId:
-            razorpayOrder.id,
-
-          amount:
-            amountPaise,
-
-          currency:
-            "INR",
-
-          keyId:
-            RAZORPAY_KEY_ID
-        }
-      );
-    } catch (error) {
-      console.error(
-        "Razorpay order error:",
-        error.message
-      );
-
-      return json(
-        res,
-        502,
-        {
-          error:
-            "Could not start online payment. Please try again."
-        }
-      );
-    }
+        localOrderId
+      }
+    );
   }
 
   // =====================================
@@ -1058,16 +942,16 @@ async function route(req, res) {
     const b =
       await body(req);
 
+    const orderId =
+      cleanText(
+        b.razorpay_order_id,
+        200
+      );
+
     const paymentId =
       cleanText(
         b.razorpay_payment_id,
-        150
-      );
-
-    const razorpayOrderId =
-      cleanText(
-        b.razorpay_order_id,
-        150
+        200
       );
 
     const signature =
@@ -1077,8 +961,8 @@ async function route(req, res) {
       );
 
     if (
+      !orderId ||
       !paymentId ||
-      !razorpayOrderId ||
       !signature
     ) {
       return json(
@@ -1091,70 +975,20 @@ async function route(req, res) {
       );
     }
 
-    const orders =
-      readJSON(
-        ORDERS,
-        []
-      );
-
-    const orderIndex =
-      orders.findIndex(
-        x =>
-          x.razorpayOrderId ===
-          razorpayOrderId
-      );
-
-    if (
-      orderIndex < 0
-    ) {
-      return json(
-        res,
-        400,
-        {
-          error:
-            "Order not found."
-        }
-      );
-    }
-
-    const order =
-      orders[
-        orderIndex
-      ];
-
-    if (
-      order.status ===
-      "paid"
-    ) {
-      return json(
-        res,
-        200,
-        {
-          ok: true,
-          orderId:
-            order.id,
-          alreadyVerified:
-            true
-        }
-      );
-    }
-
-    const expected =
+    const expectedSignature =
       crypto
         .createHmac(
           "sha256",
           RAZORPAY_KEY_SECRET
         )
         .update(
-          order.razorpayOrderId +
-          "|" +
-          paymentId
+          `${orderId}|${paymentId}`
         )
         .digest("hex");
 
     if (
       !safeCompareHex(
-        expected,
+        expectedSignature,
         signature
       )
     ) {
@@ -1163,10 +997,44 @@ async function route(req, res) {
         400,
         {
           error:
-            "Payment verification failed."
+            "Invalid payment signature."
         }
       );
     }
+
+    const orders =
+      readJSON(
+        ORDERS,
+        []
+      );
+
+    const order =
+      orders.find(
+        item =>
+          item.razorpayOrderId ===
+          orderId
+      );
+
+    if (!order) {
+      return json(
+        res,
+        404,
+        {
+          error:
+            "Order not found."
+        }
+      );
+    }
+
+    order.status =
+      "paid";
+
+    order.paymentId =
+      paymentId;
+
+    order.paidAt =
+      new Date()
+        .toISOString();
 
     const products =
       readJSON(
@@ -1203,23 +1071,6 @@ async function route(req, res) {
       products
     );
 
-    order.status =
-      "paid";
-
-    order.razorpayPaymentId =
-      paymentId;
-
-    order.razorpaySignature =
-      signature;
-
-    order.paidAt =
-      new Date()
-        .toISOString();
-
-    orders[
-      orderIndex
-    ] = order;
-
     writeJSON(
       ORDERS,
       orders
@@ -1230,55 +1081,19 @@ async function route(req, res) {
       200,
       {
         ok: true,
-
         orderId:
-          order.id,
-
-        message:
-          "Payment verified successfully."
+          order.id
       }
     );
   }
 
   // =====================================
-  // ADMIN ORDERS
+  // SHORT ROUTES
   // =====================================
 
   if (
-    p === "/api/orders" &&
-    req.method === "GET"
+    p === "/admin"
   ) {
-    if (!isAuthed(req)) {
-      return json(
-        res,
-        401,
-        {
-          error:
-            "Login required"
-        }
-      );
-    }
-
-    const orders =
-      readJSON(
-        ORDERS,
-        []
-      );
-
-    return json(
-      res,
-      200,
-      orders
-        .slice()
-        .reverse()
-    );
-  }
-
-  // =====================================
-  // SHORT ADMIN ADDRESS
-  // =====================================
-
-  if (p === "/admin") {
     const adminFile =
       path.join(
         ROOT,
@@ -1287,33 +1102,24 @@ async function route(req, res) {
       );
 
     if (
-      !fs.existsSync(
+      fs.existsSync(
         adminFile
       )
     ) {
       return send(
         res,
-        404,
-        "Admin page not found",
-        "text/plain"
+        200,
+        fs.readFileSync(
+          adminFile
+        ),
+        "text/html; charset=utf-8"
       );
     }
-
-    return send(
-      res,
-      200,
-      fs.readFileSync(
-        adminFile
-      ),
-      "text/html; charset=utf-8"
-    );
   }
 
-  // =====================================
-  // CHECKOUT PAGE
-  // =====================================
-
-  if (p === "/checkout") {
+  if (
+    p === "/checkout"
+  ) {
     const checkoutFile =
       path.join(
         ROOT,
@@ -1321,26 +1127,19 @@ async function route(req, res) {
       );
 
     if (
-      !fs.existsSync(
+      fs.existsSync(
         checkoutFile
       )
     ) {
       return send(
         res,
-        404,
-        "Checkout page not created yet",
-        "text/plain"
+        200,
+        fs.readFileSync(
+          checkoutFile
+        ),
+        "text/html; charset=utf-8"
       );
     }
-
-    return send(
-      res,
-      200,
-      fs.readFileSync(
-        checkoutFile
-      ),
-      "text/html; charset=utf-8"
-    );
   }
 
   // =====================================
@@ -1374,27 +1173,24 @@ async function route(req, res) {
   }
 
   if (
-    fs.existsSync(
-      target
-    ) &&
-    fs.statSync(
-      target
-    ).isFile()
+    fs.existsSync(target) &&
+    fs.statSync(target)
+      .isFile()
   ) {
     const ext =
-      path
-        .extname(target)
-        .toLowerCase();
+      path.extname(
+        target
+      ).toLowerCase();
 
     const types = {
       ".html":
         "text/html; charset=utf-8",
 
       ".js":
-        "text/javascript; charset=utf-8",
+        "text/javascript",
 
       ".css":
-        "text/css; charset=utf-8",
+        "text/css",
 
       ".json":
         "application/json",
@@ -1442,7 +1238,9 @@ http
     (req, res) =>
       route(req, res)
         .catch(error => {
-          console.error(error);
+          console.error(
+            error
+          );
 
           json(
             res,
@@ -1461,16 +1259,18 @@ http
         `MudduGumma store running at http://localhost:${PORT}`
       );
 
+      if (!ADMIN_PASSWORD) {
+        console.log(
+          "ADMIN_PASSWORD is not configured."
+        );
+      }
+
       if (
         !RAZORPAY_KEY_ID ||
         !RAZORPAY_KEY_SECRET
       ) {
         console.log(
           "Razorpay is not configured yet."
-        );
-      } else {
-        console.log(
-          "Razorpay payment configuration detected."
         );
       }
     }
