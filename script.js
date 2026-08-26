@@ -1,6 +1,5 @@
 // ==========================================
-// MUDDUGUMMA STORE
-// COMPLETE SCRIPT.JS
+// MUDDUGUMMA STORE - COMPLETE SCRIPT
 // ==========================================
 
 
@@ -20,7 +19,6 @@ if (yearElement) {
 // ==========================================
 
 let storeProducts = [];
-
 let cart = [];
 
 try {
@@ -52,23 +50,17 @@ async function loadProducts() {
         cache: "no-store"
       });
 
-
     if (!response.ok) {
-      throw new Error(
-        "Could not load products."
-      );
+      throw new Error("Could not load products.");
     }
-
 
     const products =
       await response.json();
-
 
     storeProducts =
       Array.isArray(products)
         ? products
         : [];
-
 
     renderProducts();
     updateCartCount();
@@ -81,33 +73,21 @@ async function loadProducts() {
       error
     );
 
-
-    storeProducts = [];
-
-
     const grid =
       document.getElementById(
         "productGrid"
       );
 
-
     if (grid) {
-
       grid.innerHTML = `
         <div class="empty-products">
-
-          <h3>
-            New collection coming soon
-          </h3>
-
+          <h3>New collection coming soon</h3>
           <p>
             Beautiful MudduGumma sarees
             will be available here soon.
           </p>
-
         </div>
       `;
-
     }
 
   }
@@ -122,14 +102,9 @@ async function loadProducts() {
 function renderProducts() {
 
   const grid =
-    document.getElementById(
-      "productGrid"
-    );
+    document.getElementById("productGrid");
 
-
-  if (!grid) {
-    return;
-  }
+  if (!grid) return;
 
 
   if (!storeProducts.length) {
@@ -157,7 +132,6 @@ function renderProducts() {
     storeProducts
       .map(product => {
 
-
         const images =
           Array.isArray(product.images) &&
           product.images.length
@@ -171,58 +145,26 @@ function renderProducts() {
           images[0] || "";
 
 
-        const productName =
-          escapeHTML(
-            product.name ||
-            "MudduGumma Saree"
-          );
-
-
         const price =
-          Number(
-            product.price || 0
-          );
+          Number(product.price || 0);
 
 
         const oldPriceValue =
-          Number(
-            product.oldPrice || 0
-          );
+          Number(product.oldPrice || 0);
 
 
         const oldPrice =
           oldPriceValue > price
             ? `
               <span class="old-price">
-
-                ₹${oldPriceValue
-                  .toLocaleString(
-                    "en-IN"
-                  )}
-
+                ₹${oldPriceValue.toLocaleString("en-IN")}
               </span>
             `
             : "";
 
 
         const stock =
-          Number(
-            product.stock || 0
-          );
-
-
-        const stockLabel =
-          stock > 0
-            ? `
-              <span class="in-stock">
-                In Stock
-              </span>
-            `
-            : `
-              <span class="out-stock">
-                Out of Stock
-              </span>
-            `;
+          Number(product.stock || 0);
 
 
         const thumbnails =
@@ -230,17 +172,13 @@ function renderProducts() {
             ? `
               <div class="product-thumbnails">
 
-                ${images
-                  .map(img => `
-
-                    <img
-                      src="${escapeAttribute(img)}"
-                      alt="${productName}"
-                      onclick="changeProductImage(this)"
-                    >
-
-                  `)
-                  .join("")}
+                ${images.map(img => `
+                  <img
+                    src="${escapeAttribute(img)}"
+                    alt="${escapeHTML(product.name)}"
+                    onclick="changeProductImage(this)"
+                  >
+                `).join("")}
 
               </div>
             `
@@ -265,7 +203,7 @@ function renderProducts() {
                     <img
                       class="product-image"
                       src="${escapeAttribute(mainImage)}"
-                      alt="${productName}"
+                      alt="${escapeHTML(product.name)}"
                     >
                   `
                   : `
@@ -284,16 +222,14 @@ function renderProducts() {
             <div class="product-info">
 
               <h3>
-                ${productName}
+                ${escapeHTML(product.name)}
               </h3>
 
 
               <div class="product-price">
 
                 <strong>
-                  ₹${price.toLocaleString(
-                    "en-IN"
-                  )}
+                  ₹${price.toLocaleString("en-IN")}
                 </strong>
 
                 ${oldPrice}
@@ -301,27 +237,27 @@ function renderProducts() {
               </div>
 
 
-              ${stockLabel}
+              ${
+                stock > 0
+                  ? `
+                    <span class="in-stock">
+                      In Stock
+                    </span>
+                  `
+                  : `
+                    <span class="out-stock">
+                      Out of Stock
+                    </span>
+                  `
+              }
 
 
               ${
                 colors.length
                   ? `
                     <div class="product-colors">
-
-                      <b>
-                        Colors:
-                      </b>
-
-                      ${colors
-                        .map(
-                          color =>
-                            escapeHTML(
-                              color
-                            )
-                        )
-                        .join(", ")}
-
+                      <b>Colors:</b>
+                      ${colors.map(escapeHTML).join(", ")}
                     </div>
                   `
                   : ""
@@ -332,11 +268,7 @@ function renderProducts() {
                 product.description
                   ? `
                     <p class="product-description">
-
-                      ${escapeHTML(
-                        product.description
-                      )}
-
+                      ${escapeHTML(product.description)}
                     </p>
                   `
                   : ""
@@ -351,9 +283,7 @@ function renderProducts() {
                       <button
                         type="button"
                         class="button add-cart-btn"
-                        onclick="addToCart('${escapeJS(
-                          product.id
-                        )}')"
+                        onclick="addToCart('${escapeJS(product.id)}')"
                       >
                         Add to Cart
                       </button>
@@ -362,9 +292,7 @@ function renderProducts() {
                       <button
                         type="button"
                         class="button buy-now-btn"
-                        onclick="buyNow('${escapeJS(
-                          product.id
-                        )}')"
+                        onclick="buyNow('${escapeJS(product.id)}')"
                       >
                         Buy Now
                       </button>
@@ -373,7 +301,6 @@ function renderProducts() {
                   `
                   : `
                     <button
-                      type="button"
                       class="button sold-btn"
                       disabled
                     >
@@ -398,35 +325,18 @@ function renderProducts() {
 // CHANGE PRODUCT IMAGE
 // ==========================================
 
-function changeProductImage(
-  thumbnail
-) {
-
-  if (!thumbnail) {
-    return;
-  }
-
+function changeProductImage(thumbnail) {
 
   const card =
-    thumbnail.closest(
-      ".product-card"
-    );
+    thumbnail.closest(".product-card");
 
-
-  if (!card) {
-    return;
-  }
-
+  if (!card) return;
 
   const mainImage =
-    card.querySelector(
-      ".product-image"
-    );
-
+    card.querySelector(".product-image");
 
   if (mainImage) {
-    mainImage.src =
-      thumbnail.src;
+    mainImage.src = thumbnail.src;
   }
 
 }
@@ -445,32 +355,22 @@ function addToCart(productId) {
         String(productId)
     );
 
-
   if (!product) {
-
-    alert(
-      "This product could not be found."
-    );
-
+    alert("Product not found.");
     return;
-
   }
 
 
-  const availableStock =
-    Number(
-      product.stock || 0
-    );
+  const stock =
+    Number(product.stock || 0);
 
-
-  if (availableStock <= 0) {
+  if (stock <= 0) {
 
     alert(
       "Sorry, this saree is currently out of stock."
     );
 
     return;
-
   }
 
 
@@ -486,7 +386,7 @@ function addToCart(productId) {
 
     if (
       Number(existing.quantity) >=
-      availableStock
+      stock
     ) {
 
       alert(
@@ -494,21 +394,14 @@ function addToCart(productId) {
       );
 
       return;
-
     }
 
-
-    existing.quantity =
-      Number(
-        existing.quantity || 0
-      ) + 1;
+    existing.quantity += 1;
 
   } else {
 
     const images =
-      Array.isArray(
-        product.images
-      )
+      Array.isArray(product.images)
         ? product.images
         : [];
 
@@ -522,9 +415,7 @@ function addToCart(productId) {
         product.name,
 
       price:
-        Number(
-          product.price || 0
-        ),
+        Number(product.price || 0),
 
       image:
         images.length
@@ -539,7 +430,6 @@ function addToCart(productId) {
 
 
   saveCart();
-
   openCart();
 
 }
@@ -560,30 +450,19 @@ function buyNow(productId) {
 
 
   if (!product) {
-
-    alert(
-      "This product could not be found."
-    );
-
     return;
-
   }
 
 
-  const availableStock =
-    Number(
-      product.stock || 0
-    );
-
-
-  if (availableStock <= 0) {
+  if (
+    Number(product.stock || 0) <= 0
+  ) {
 
     alert(
       "Sorry, this saree is currently out of stock."
     );
 
     return;
-
   }
 
 
@@ -598,9 +477,7 @@ function buyNow(productId) {
   if (!existing) {
 
     const images =
-      Array.isArray(
-        product.images
-      )
+      Array.isArray(product.images)
         ? product.images
         : [];
 
@@ -614,9 +491,7 @@ function buyNow(productId) {
         product.name,
 
       price:
-        Number(
-          product.price || 0
-        ),
+        Number(product.price || 0),
 
       image:
         images.length
@@ -632,7 +507,6 @@ function buyNow(productId) {
 
   saveCart();
 
-
   window.location.href =
     "/checkout.html";
 
@@ -645,22 +519,10 @@ function buyNow(productId) {
 
 function saveCart() {
 
-  try {
-
-    localStorage.setItem(
-      "muddugummaCart",
-      JSON.stringify(cart)
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Could not save cart:",
-      error
-    );
-
-  }
-
+  localStorage.setItem(
+    "muddugummaCart",
+    JSON.stringify(cart)
+  );
 
   updateCartCount();
   renderCart();
@@ -669,21 +531,16 @@ function saveCart() {
 
 
 // ==========================================
-// CART COUNTER
+// CART COUNT
 // ==========================================
 
 function updateCartCount() {
 
   const count =
     cart.reduce(
-      (
-        total,
-        item
-      ) =>
+      (total, item) =>
         total +
-        Number(
-          item.quantity || 0
-        ),
+        Number(item.quantity || 0),
       0
     );
 
@@ -723,40 +580,19 @@ function openCart() {
     );
 
 
-  if (!drawer) {
+  if (drawer) {
 
-    console.error(
-      "Cart drawer was not found."
-    );
+    drawer.classList.add("open");
 
-    return;
+    drawer.style.transform =
+      "translateX(0)";
 
   }
 
 
-  drawer.classList.add(
-    "open"
-  );
-
-
-  /*
-    These inline styles are a backup.
-    Even if Chrome has cached an older
-    CSS file, the drawer should open.
-  */
-
-  drawer.style.transform =
-    "translateX(0)";
-
-  drawer.style.visibility =
-    "visible";
-
-
   if (overlay) {
 
-    overlay.classList.add(
-      "show"
-    );
+    overlay.classList.add("show");
 
     overlay.style.opacity =
       "1";
@@ -793,30 +629,20 @@ function closeCart() {
 
   if (drawer) {
 
-    drawer.classList.remove(
-      "open"
-    );
+    drawer.classList.remove("open");
 
-    drawer.style.transform =
-      "";
-
-    drawer.style.visibility =
-      "";
+    drawer.style.transform = "";
 
   }
 
 
   if (overlay) {
 
-    overlay.classList.remove(
-      "show"
-    );
+    overlay.classList.remove("show");
 
-    overlay.style.opacity =
-      "";
+    overlay.style.opacity = "";
 
-    overlay.style.visibility =
-      "";
+    overlay.style.visibility = "";
 
   }
 
@@ -849,9 +675,7 @@ function renderCart() {
     !container ||
     !totalElement
   ) {
-
     return;
-
   }
 
 
@@ -870,8 +694,7 @@ function renderCart() {
         </h3>
 
         <p>
-          Add your favourite
-          MudduGumma sarees
+          Add your favourite MudduGumma sarees
           to begin shopping.
         </p>
 
@@ -883,7 +706,6 @@ function renderCart() {
     totalElement.textContent =
       "₹0";
 
-
     return;
 
   }
@@ -891,126 +713,91 @@ function renderCart() {
 
   container.innerHTML =
     cart
-      .map(item => {
+      .map(item => `
+
+        <div class="cart-item">
+
+          ${
+            item.image
+              ? `
+                <img
+                  src="${escapeAttribute(item.image)}"
+                  alt="${escapeHTML(item.name)}"
+                >
+              `
+              : ""
+          }
 
 
-        const quantity =
-          Math.max(
-            1,
-            Number(
-              item.quantity || 1
-            )
-          );
+          <div class="cart-item-info">
+
+            <strong>
+              ${escapeHTML(item.name)}
+            </strong>
 
 
-        return `
-
-          <div class="cart-item">
-
-            ${
-              item.image
-                ? `
-                  <img
-                    src="${escapeAttribute(
-                      item.image
-                    )}"
-                    alt="${escapeHTML(
-                      item.name
-                    )}"
-                  >
-                `
-                : ""
-            }
+            <span>
+              ₹${Number(item.price).toLocaleString("en-IN")}
+            </span>
 
 
-            <div class="cart-item-info">
+            <div class="quantity-controls">
 
-              <strong>
-                ${escapeHTML(
-                  item.name
-                )}
-              </strong>
+              <button
+                type="button"
+                onclick="changeQuantity(
+                  '${escapeJS(item.id)}',
+                  -1
+                )"
+                title="Reduce quantity"
+              >
+                −
+              </button>
 
 
               <span>
-                ₹${Number(
-                  item.price || 0
-                ).toLocaleString(
-                  "en-IN"
-                )}
+                ${Number(item.quantity || 1)}
               </span>
-
-
-              <div class="quantity-controls">
-
-                <button
-                  type="button"
-                  onclick="changeQuantity(
-                    '${escapeJS(
-                      item.id
-                    )}',
-                    -1
-                  )"
-                >
-                  −
-                </button>
-
-
-                <span>
-                  ${quantity}
-                </span>
-
-
-                <button
-                  type="button"
-                  onclick="changeQuantity(
-                    '${escapeJS(
-                      item.id
-                    )}',
-                    1
-                  )"
-                >
-                  +
-                </button>
-
-              </div>
 
 
               <button
                 type="button"
-                class="remove-item"
-                onclick="removeFromCart(
-                  '${escapeJS(
-                    item.id
-                  )}'
+                onclick="changeQuantity(
+                  '${escapeJS(item.id)}',
+                  1
                 )"
+                title="Increase quantity"
               >
-                Remove
+                +
               </button>
 
             </div>
 
+
+            <button
+              type="button"
+              class="remove-item"
+              onclick="removeFromCart(
+                '${escapeJS(item.id)}'
+              )"
+            >
+              🗑 Remove
+            </button>
+
           </div>
 
-        `;
+        </div>
 
-      })
+      `)
       .join("");
 
 
   const total =
     cart.reduce(
-      (
-        sum,
-        item
-      ) =>
+      (sum, item) =>
         sum +
-        Number(
-          item.price || 0
-        ) *
-        Number(
-          item.quantity || 0
-        ),
+        Number(item.price || 0) *
+        Number(item.quantity || 0),
       0
     );
 
@@ -1058,16 +845,12 @@ function changeQuantity(
     amount > 0 &&
     product &&
     Number(item.quantity) >=
-      Number(
-        product.stock || 0
-      )
+    Number(product.stock || 0)
   ) {
 
     alert(
       "Only " +
-      Number(
-        product.stock || 0
-      ) +
+      product.stock +
       " piece(s) available."
     );
 
@@ -1077,9 +860,7 @@ function changeQuantity(
 
 
   item.quantity =
-    Number(
-      item.quantity || 1
-    ) +
+    Number(item.quantity || 1) +
     Number(amount);
 
 
@@ -1087,12 +868,8 @@ function changeQuantity(
     item.quantity <= 0
   ) {
 
-    cart =
-      cart.filter(
-        item =>
-          String(item.id) !==
-          String(productId)
-      );
+    removeFromCart(productId);
+    return;
 
   }
 
@@ -1103,12 +880,25 @@ function changeQuantity(
 
 
 // ==========================================
-// REMOVE PRODUCT
+// REMOVE ONE CART PRODUCT
 // ==========================================
 
 function removeFromCart(
   productId
 ) {
+
+  const item =
+    cart.find(
+      item =>
+        String(item.id) ===
+        String(productId)
+    );
+
+
+  if (!item) {
+    return;
+  }
+
 
   cart =
     cart.filter(
@@ -1142,7 +932,6 @@ function goToCheckout() {
 
   saveCart();
 
-
   window.location.href =
     "/checkout.html";
 
@@ -1168,22 +957,17 @@ if (notifyForm) {
       event.preventDefault();
 
 
-      const nameInput =
-        document.getElementById(
-          "name"
-        );
+      const name =
+        document
+          .getElementById("name")
+          ?.value
+          .trim() || "";
 
 
       const message =
         document.getElementById(
           "formMessage"
         );
-
-
-      const name =
-        nameInput
-          ? nameInput.value.trim()
-          : "";
 
 
       if (message) {
@@ -1230,40 +1014,24 @@ function escapeHTML(value) {
 
 function escapeAttribute(value) {
 
-  return escapeHTML(
-    value
-  );
+  return escapeHTML(value);
 
 }
 
 
 function escapeJS(value) {
 
-  return String(
-    value || ""
-  )
-    .replace(
-      /\\/g,
-      "\\\\"
-    )
-    .replace(
-      /'/g,
-      "\\'"
-    )
-    .replace(
-      /\r/g,
-      "\\r"
-    )
-    .replace(
-      /\n/g,
-      "\\n"
-    );
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n");
 
 }
 
 
 // ==========================================
-// MAKE FUNCTIONS AVAILABLE TO HTML BUTTONS
+// AVAILABLE FOR HTML BUTTONS
 // ==========================================
 
 window.openCart =
