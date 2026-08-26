@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MudduGumma | Women's Fashion</title>
+<meta name="description" content="MudduGumma women's fashion — sarees, dresses and new arrivals.">
+<style>
+:root{--wine:#6d173c;--pink:#f7e7ec;--cream:#fffaf7;--ink:#241b20;--muted:#766a70}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#fff}
+a{text-decoration:none;color:inherit}.top{background:var(--wine);color:#fff;text-align:center;padding:9px;font-size:13px}
+header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #eee}
+.nav{max-width:1200px;margin:auto;display:flex;align-items:center;gap:28px;padding:18px 22px}
+.logo{font-size:28px;font-weight:800;letter-spacing:1px;color:var(--wine)}.navlinks{display:flex;gap:20px;flex:1}
+.navlinks a{font-size:14px;font-weight:700}.icons{display:flex;gap:14px;align-items:center}
+.search{border:1px solid #ddd;border-radius:24px;padding:10px 14px;width:220px}
+.hero{background:linear-gradient(120deg,#f8e6ec,#fff7f3);min-height:430px;display:grid;place-items:center;text-align:center;padding:50px 20px}
+.hero h1{font-size:clamp(40px,7vw,76px);margin:8px 0;color:var(--wine);font-family:Georgia,serif}
+.hero p{font-size:18px;color:var(--muted);max-width:600px;margin:12px auto 25px}
+.btn{display:inline-block;background:var(--wine);color:#fff;border:0;padding:13px 22px;border-radius:4px;font-weight:700;cursor:pointer}
+.section{max-width:1200px;margin:auto;padding:48px 22px}.section h2{font-family:Georgia,serif;font-size:32px;margin:0 0 22px}
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.cat{background:var(--pink);padding:28px;text-align:center;border-radius:10px;font-weight:800;color:var(--wine)}
+.controls{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0 25px}.controls button{border:1px solid #ddd;background:#fff;padding:10px 16px;border-radius:22px;cursor:pointer}.controls button.active{background:var(--wine);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}.card{border:1px solid #eee;border-radius:10px;overflow:hidden;background:#fff}.card img{width:100%;height:330px;object-fit:cover;display:block}.info{padding:14px}.name{font-weight:700}.price{margin-top:8px;font-weight:800}.old{text-decoration:line-through;color:#999;font-weight:400;margin-left:5px}.sale{color:var(--wine);font-size:13px;margin-left:5px}.stock{font-size:12px;color:#68705f;margin-top:6px}.card button{width:100%;margin-top:12px}
+.cart{position:fixed;right:20px;bottom:20px;background:var(--wine);color:#fff;border-radius:50px;padding:14px 20px;box-shadow:0 8px 25px #0002;cursor:pointer;font-weight:700}
+footer{background:#241b20;color:#fff;padding:45px 22px;margin-top:40px}.foot{max-width:1200px;margin:auto;display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:30}.modal.show{display:flex}.panel{background:#fff;width:min(680px,94vw);max-height:90vh;overflow:auto;border-radius:14px;padding:24px}.close{float:right;border:0;background:none;font-size:25px;cursor:pointer}.item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eee}.item img{width:75px;height:90px;object-fit:cover;border-radius:6px}.qty{display:flex;gap:7px;align-items:center}.qty button{border:1px solid #ddd;background:#fff;padding:5px 9px}.total{font-size:20px;font-weight:800;margin:20px 0}
+@media(max-width:800px){.nav{gap:12px;padding:14px}.navlinks{display:none}.search{width:150px}.cats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:repeat(2,1fr)}.card img{height:250px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr 1fr;gap:10px}.card img{height:210px}.info{padding:10px}.name{font-size:14px}.hero{min-height:360px}}
+</style>
+</head>
+<body>
+<div class="top">✨ New collection is here • Free shipping on selected orders</div>
+<header><nav class="nav">
+<div class="logo">MUDDUGUMMA</div>
+<div class="navlinks"><a href="#shop">SHOP</a><a href="#categories">CATEGORIES</a><a href="#new">NEW ARRIVALS</a><a href="#contact">CONTACT</a></div>
+<input id="search" class="search" placeholder="Search sarees, dresses...">
+<div class="icons">♡ <button id="cartTop" style="border:0;background:none;cursor:pointer">🛒 <span id="count">0</span></button></div>
+</nav></header>
+
+<section class="hero"><div>
+<div style="letter-spacing:4px;color:#8b4d66;font-weight:700">MUDDUGUMMA WOMEN'S COLLECTION</div>
+<h1>Wear Your Grace</h1>
+<p>Discover beautiful sarees, dresses and everyday styles selected for every occasion.</p>
+<a class="btn" href="#shop">SHOP NOW</a>
+</div></section>
+
+<section class="section" id="categories"><h2>Shop by Category</h2>
+<div class="cats"><a class="cat" href="#shop" onclick="setCat('Sarees')">SAREES</a><a class="cat" href="#shop" onclick="setCat('Dresses')">DRESSES</a><a class="cat" href="#shop" onclick="setCat('New Arrivals')">NEW ARRIVALS</a><a class="cat" href="#shop" onclick="setCat('All')">ALL COLLECTIONS</a></div>
+</section>
+
+<section class="section" id="shop"><h2>Our Collection</h2>
+<div class="controls"><button class="active" data-cat="All">All</button><button data-cat="Sarees">Sarees</button><button data-cat="Dresses">Dresses</button><button data-cat="New Arrivals">New Arrivals</button></div>
+<div class="grid" id="grid"></div></section>
+
+<section class="section" id="new"><h2>Why Shop MudduGumma?</h2><div class="cats"><div class="cat">QUALITY<br><small>Carefully selected styles</small></div><div class="cat">EASY SHOPPING<br><small>Simple online ordering</small></div><div class="cat">SECURE PAYMENTS<br><small>Online payment ready</small></div><div class="cat">WHATSAPP SUPPORT<br><small>Talk to our team</small></div></div></section>
+
+<footer id="contact"><div class="foot"><div><div class="logo" style="color:#fff">MUDDUGUMMA</div><p>Women's fashion for every beautiful occasion.</p></div><div><b>Contact</b><p>WhatsApp: Add your number<br>Email: Add your email</p></div></div></footer>
+
+<button class="cart" id="cartBtn">🛒 Cart (<span id="count2">0</span>)</button>
+<div class="modal" id="modal"><div class="panel"><button class="close" onclick="closeCart()">×</button><h2>Your Cart</h2><div id="cartItems"></div><div class="total">Total: ₹<span id="total">0</span></div><button class="btn" onclick="checkout()">Proceed to Checkout</button></div></div>
+
+<script>
+let products=[], cart=JSON.parse(localStorage.getItem('muddu_cart')||'[]'), currentCat='All';
+const money=n=>new Intl.NumberFormat('en-IN').format(n);
+fetch('/api/products').then(r=>r.json()).then(x=>{products=x;render()});
+function setCat(c){currentCat=c;document.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('active',b.dataset.cat===c));render()}
+document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>setCat(b.dataset.cat));
+document.getElementById('search').oninput=e=>render(e.target.value.toLowerCase());
+function render(q=''){
+ const list=products.filter(p=>(currentCat==='All'||p.category===currentCat)&&(!q||p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q)));
+ document.getElementById('grid').innerHTML=list.map(p=>`<article class="card"><img src="${p.image}" alt="${p.name}"><div class="info"><div class="name">${p.name}</div><div class="price">₹${money(p.price)} <span class="old">₹${money(p.oldPrice)}</span><span class="sale">${Math.round((1-p.price/p.oldPrice)*100)}% OFF</span></div><div class="stock">${p.stock} in stock</div><button class="btn" onclick="add('${p.id}')">ADD TO CART</button></div></article>`).join('');
+}
+function add(id){const p=products.find(x=>x.id===id);let i=cart.find(x=>x.id===id);if(i)i.qty=Math.min(i.qty+1,p.stock);else cart.push({id,qty:1});save();openCart()}
+function save(){localStorage.setItem('muddu_cart',JSON.stringify(cart));document.getElementById('count').textContent=cart.reduce((a,x)=>a+x.qty,0);document.getElementById('count2').textContent=cart.reduce((a,x)=>a+x.qty,0)}
+function openCart(){document.getElementById('modal').classList.add('show');let rows=cart.map(x=>{let p=products.find(y=>y.id===x.id);return `<div class="item"><img src="${p.image}"><div style="flex:1"><b>${p.name}</b><div>₹${money(p.price)}</div><div class="qty"><button onclick="change('${p.id}',-1)">−</button>${x.qty}<button onclick="change('${p.id}',1)">+</button></div></div></div>`}).join('');document.getElementById('cartItems').innerHTML=rows||'<p>Your cart is empty.</p>';document.getElementById('total').textContent=money(cart.reduce((a,x)=>a+products.find(y=>y.id===x.id).price*x.qty,0))}
+function change(id,d){let i=cart.find(x=>x.id===id);i.qty+=d;if(i.qty<=0)cart=cart.filter(x=>x.id!==id);save();openCart()}
+function closeCart(){document.getElementById('modal').classList.remove('show')}
+document.getElementById('cartBtn').onclick=openCart;document.getElementById('cartTop').onclick=openCart;
+function checkout(){alert('Checkout is the next build step. We will connect your real customer address + Razorpay payment + order database here.')}
+save();
+</script>
+</body></html>

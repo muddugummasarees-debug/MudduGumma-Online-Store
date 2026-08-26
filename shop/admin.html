@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MudduGumma Admin</title>
+
+<style>
+:root{
+  --wine:#6d173c;
+  --pink:#f7e7ec;
+  --ink:#241b20;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial;
+  color:var(--ink);
+  background:#faf7f8
+}
+header{
+  background:#fff;
+  border-bottom:1px solid #eee;
+  padding:18px 24px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+.logo{
+  font-weight:800;
+  font-size:24px;
+  color:var(--wine)
+}
+main{
+  max-width:1100px;
+  margin:30px auto;
+  padding:0 20px
+}
+.box{
+  background:#fff;
+  border:1px solid #eee;
+  border-radius:12px;
+  padding:24px;
+  margin-bottom:20px;
+  box-shadow:0 4px 18px #00000008
+}
+h1,h2{margin-top:0}
+label{
+  display:block;
+  font-weight:700;
+  margin:12px 0 6px
+}
+input,select,textarea{
+  width:100%;
+  padding:11px;
+  border:1px solid #ddd;
+  border-radius:7px;
+  font:inherit
+}
+textarea{min-height:90px}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px
+}
+.btn{
+  background:var(--wine);
+  color:#fff;
+  border:0;
+  padding:12px 18px;
+  border-radius:7px;
+  cursor:pointer;
+  font-weight:700
+}
+.btn.alt{
+  background:#eee;
+  color:#333
+}
+.btn.danger{
+  background:#a22
+}
+table{
+  width:100%;
+  border-collapse:collapse
+}
+th,td{
+  padding:10px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+  vertical-align:middle
+}
+img.thumb{
+  width:60px;
+  height:70px;
+  object-fit:cover;
+  border-radius:5px
+}
+.hidden{display:none}
+.muted{
+  color:#777;
+  font-size:13px
+}
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap
+}
+.preview-wrap{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px
+}
+.preview-wrap img{
+  width:80px;
+  height:95px;
+  object-fit:cover;
+  border-radius:7px;
+  border:1px solid #ddd
+}
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr}
+  table{font-size:13px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">MUDDUGUMMA ADMIN</div>
+  <div class="row">
+    <a href="/" target="_blank">View Store</a>
+    <button id="logout" class="btn alt hidden">Logout</button>
+  </div>
+</header>
+
+<main>
+
+<section id="loginBox" class="box">
+  <h1>Admin Login</h1>
+  <p class="muted">Use your store administrator account.</p>
+
+  <label>Username</label>
+  <input id="username" value="admin">
+
+  <label>Password</label>
+  <input id="password" type="password">
+
+  <button class="btn" onclick="login()">Login</button>
+  <p id="loginMsg"></p>
+</section>
+
+
+<section id="app" class="hidden">
+
+<div class="box">
+
+<h1 id="formTitle">Add Product</h1>
+
+<div class="grid">
+
+<div>
+  <label>Product name *</label>
+  <input id="name" placeholder="e.g. Designer Saree">
+</div>
+
+<div>
+  <label>Category</label>
+  <select id="category">
+    <option>Sarees</option>
+    <option>Dresses</option>
+    <option>New Arrivals</option>
+    <option>Offers</option>
+  </select>
+</div>
+
+<div>
+  <div class="grid">
+    <div>
+      <label>Price *</label>
+      <input id="price" type="number">
+    </div>
+
+    <div>
+      <label>Old price</label>
+      <input id="oldPrice" type="number">
+    </div>
+  </div>
+</div>
+
+<div>
+  <label>Stock</label>
+  <input id="stock" type="number" min="0" value="0">
+</div>
+
+<div>
+  <label>Sizes (comma separated)</label>
+  <input id="sizes" placeholder="S, M, L, XL">
+</div>
+
+<div>
+  <label>Colors (comma separated)</label>
+  <input id="colors" placeholder="Pink, Blue, Black">
+</div>
+
+</div>
+
+<label>Description</label>
+<textarea id="description"></textarea>
+
+<label>Product photos</label>
+<input id="imageFile" type="file" accept="image/*" multiple>
+
+<div class="muted">
+You can select 2 or more photos together. Hold Ctrl while selecting multiple photos.
+Leave this empty while editing if you want to keep the existing photos.
+</div>
+
+<div id="imagePreview" class="preview-wrap"></div>
+
+<div class="row" style="margin-top:18px">
+  <button class="btn" onclick="saveProduct()">Save Product</button>
+  <button class="btn alt" onclick="resetForm()">Clear</button>
+</div>
+
+<p id="msg"></p>
+
+</div>
+
+
+<div class="box">
+
+<h2>Your Products</h2>
+
+<div class="muted">
+Add new stock here every day. Changes are saved on the store server.
+</div>
+
+<div style="overflow:auto;margin-top:15px">
+
+<table>
+
+<thead>
+<tr>
+<th>Photo</th>
+<th>Product</th>
+<th>Price</th>
+<th>Stock</th>
+<th>Category</th>
+<th>Actions</th>
+</tr>
+</thead>
+
+<tbody id="products"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<script>
+
+let editing=null;
+let products=[];
+
+const $=id=>document.getElementById(id);
+
+
+async function check(){
+
+  let r=await fetch('/api/me');
+  let x=await r.json();
+
+  if(x.authenticated){
+    showApp();
+  }
+
+}
+
+
+function showApp(){
+
+  $('loginBox').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  $('logout').classList.remove('hidden');
+
+  load();
+
+}
+
+
+async function login(){
+
+  let r=await fetch('/api/login',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify({
+      username:$('username').value,
+      password:$('password').value
+    })
+  });
+
+  let x=await r.json();
+
+  if(x.ok){
+    showApp();
+  }else{
+    $('loginMsg').textContent=x.error||'Login failed';
+  }
+
+}
+
+
+$('logout').onclick=async()=>{
+
+  await fetch('/api/logout',{
+    method:'POST'
+  });
+
+  location.reload();
+
+};
+
+
+async function load(){
+
+  let r=await fetch('/api/products');
+
+  products=await r.json();
+
+  $('products').innerHTML=
+  products.map(p=>{
+
+    const firstImage=
+      (Array.isArray(p.images) && p.images.length)
+      ? p.images[0]
+      : p.image;
+
+    const count=
+      Array.isArray(p.images)
+      ? p.images.length
+      : (p.image ? 1 : 0);
+
+    return `
+    <tr>
+
+    <td>
+      ${firstImage
+        ? `<img class="thumb" src="${firstImage}">
+           <div class="muted">${count} photo${count===1?'':'s'}</div>`
+        : '—'}
+    </td>
+
+    <td>
+      <b>${esc(p.name)}</b>
+      <div class="muted">${esc(p.id)}</div>
+    </td>
+
+    <td>
+      ₹${Number(p.price).toLocaleString('en-IN')}
+    </td>
+
+    <td>${p.stock}</td>
+
+    <td>${esc(p.category)}</td>
+
+    <td class="row">
+      <button class="btn" onclick="edit('${p.id}')">
+        Edit
+      </button>
+
+      <button class="btn danger" onclick="del('${p.id}')">
+        Delete
+      </button>
+    </td>
+
+    </tr>
+    `;
+
+  }).join('');
+
+}
+
+
+function esc(s){
+
+  return String(s||'')
+    .replace(/[&<>"']/g,m=>({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    }[m]));
+
+}
+
+
+function edit(id){
+
+  let p=products.find(x=>x.id===id);
+
+  editing=p.id;
+
+  $('formTitle').textContent='Edit Product';
+
+  $('name').value=p.name;
+  $('category').value=p.category;
+  $('price').value=p.price;
+  $('oldPrice').value=p.oldPrice||'';
+  $('stock').value=p.stock;
+
+  $('sizes').value=
+    (p.sizes||[]).join(', ');
+
+  $('colors').value=
+    (p.colors||[]).join(', ');
+
+  $('description').value=
+    p.description||'';
+
+  const existing=
+    Array.isArray(p.images) && p.images.length
+      ? p.images
+      : (p.image ? [p.image] : []);
+
+  $('imagePreview').innerHTML=
+    existing.map(src=>
+      `<img src="${src}">`
+    ).join('');
+
+  window.scrollTo({
+    top:0,
+    behavior:'smooth'
+  });
+
+}
+
+
+async function del(id){
+
+  if(!confirm('Delete this product?')){
+    return;
+  }
+
+  let r=await fetch(
+    '/api/products/'+encodeURIComponent(id),
+    {
+      method:'DELETE'
+    }
+  );
+
+  if(r.ok){
+    load();
+  }
+
+}
+
+
+$('imageFile').addEventListener('change',()=>{
+
+  const files=[...$('imageFile').files];
+
+  $('imagePreview').innerHTML='';
+
+  files.forEach(file=>{
+
+    const reader=new FileReader();
+
+    reader.onload=()=>{
+
+      const img=document.createElement('img');
+      img.src=reader.result;
+
+      $('imagePreview').appendChild(img);
+
+    };
+
+    reader.readAsDataURL(file);
+
+  });
+
+});
+
+
+async function saveProduct(){
+
+  const files=[...$('imageFile').files];
+
+  const old=
+    editing
+      ? products.find(x=>x.id===editing)
+      : null;
+
+  let images=[];
+
+
+  if(old){
+
+    if(
+      Array.isArray(old.images) &&
+      old.images.length
+    ){
+      images=[...old.images];
+
+    }else if(old.image){
+
+      images=[old.image];
+
+    }
+
+  }
+
+
+  if(files.length){
+
+    images=[];
+
+    for(const file of files){
+
+      const imageData=
+        await new Promise((resolve,reject)=>{
+
+          const rd=new FileReader();
+
+          rd.onload=()=>resolve(rd.result);
+          rd.onerror=reject;
+
+          rd.readAsDataURL(file);
+
+        });
+
+
+      const u=await fetch('/api/upload',{
+
+        method:'POST',
+
+        headers:{
+          'Content-Type':'application/json'
+        },
+
+        body:JSON.stringify({
+          data:imageData
+        })
+
+      });
+
+
+      const ux=await u.json();
+
+
+      if(!u.ok){
+
+        $('msg').textContent=
+          ux.error||'Could not upload photo';
+
+        return;
+
+      }
+
+
+      images.push(ux.url);
+
+    }
+
+  }
+
+
+  const payload={
+
+    id:editing||undefined,
+
+    name:$('name').value,
+
+    category:$('category').value,
+
+    price:Number(
+      $('price').value
+    ),
+
+    oldPrice:
+      Number(
+        $('oldPrice').value
+      )||0,
+
+    stock:
+      Number(
+        $('stock').value
+      )||0,
+
+    sizes:
+      $('sizes').value
+        .split(',')
+        .map(x=>x.trim())
+        .filter(Boolean),
+
+    colors:
+      $('colors').value
+        .split(',')
+        .map(x=>x.trim())
+        .filter(Boolean),
+
+    description:
+      $('description').value,
+
+    images:images,
+
+    image:
+      images[0]||''
+
+  };
+
+
+  let r=await fetch('/api/products',{
+
+    method:'POST',
+
+    headers:{
+      'Content-Type':'application/json'
+    },
+
+    body:
+      JSON.stringify(payload)
+
+  });
+
+
+  let x=await r.json();
+
+
+  if(r.ok){
+
+    $('msg').textContent=
+      'Saved successfully.';
+
+    resetForm();
+
+    load();
+
+  }else{
+
+    $('msg').textContent=
+      x.error||
+      'Could not save';
+
+  }
+
+}
+
+
+function resetForm(){
+
+  editing=null;
+
+  $('formTitle').textContent=
+    'Add Product';
+
+  [
+    'name',
+    'price',
+    'oldPrice',
+    'sizes',
+    'colors',
+    'description',
+    'imageFile'
+  ].forEach(id=>{
+    $(id).value='';
+  });
+
+  $('stock').value=0;
+
+  $('category').value='Sarees';
+
+  $('imagePreview').innerHTML='';
+
+}
+
+
+check();
+
+</script>
+
+</body>
+</html>
