@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#a90f48" />
+  <meta name="description" content="MudduGumma Women's Wear — elegant sarees and women's fashion." />
+
+  <title>MudduGumma Women's Wear</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+<header class="site-header">
+
+  <a class="mini-brand" href="#home" aria-label="MudduGumma home">
+    <img src="assets/brand-banner.png" alt="MudduGumma Women's Wear logo" />
+  </a>
+
+  <nav aria-label="Main navigation">
+    <a href="#home">Home</a>
+    <a href="#about">About</a>
+    <a href="#collections">Collections</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <div class="header-actions">
+
+    <a
+      class="whatsapp-link"
+      href="https://wa.me/919502026724?text=Hello%20Tejaswini%2C%20I%27m%20interested%20in%20MudduGumma%20Women%27s%20Wear."
+      target="_blank"
+      rel="noopener"
+    >
+      WhatsApp
+    </a>
+
+    <button class="cart-button" onclick="openCart()" aria-label="Open shopping cart">
+      🛒
+      <span id="cartCount">0</span>
+    </button>
+
+  </div>
+
+</header>
+
+
+<main>
+
+<section id="home" class="hero">
+
+  <div class="hero-art">
+    <img
+      src="assets/coming-soon.png"
+      alt="MudduGumma Women's Wear"
+    />
+  </div>
+
+  <div class="hero-copy">
+
+    <span class="eyebrow">
+      Elegant sarees for every special moment
+    </span>
+
+    <h1>
+      New Style.<br>
+      <em>New You.</em>
+    </h1>
+
+    <p>
+      Discover beautiful MudduGumma sarees selected for celebrations,
+      weddings, festivals and memorable occasions.
+    </p>
+
+    <div class="hero-actions">
+      <a class="button primary" href="#collections">Shop Sarees</a>
+      <a class="button secondary" href="#about">Our Story</a>
+    </div>
+
+  </div>
+
+</section>
+
+
+<section id="about" class="intro section">
+
+  <div class="section-label">
+    Welcome to MudduGumma
+  </div>
+
+  <h2>
+    Style that feels
+    <span>beautifully you.</span>
+  </h2>
+
+  <p class="lead">
+    Discover elegant sarees, rich colours and graceful styles selected
+    for women who love timeless fashion.
+  </p>
+
+  <div class="feature-grid">
+
+    <article>
+      <div class="icon">✦</div>
+      <h3>Latest Collections</h3>
+      <p>Fresh saree styles selected for festive and special occasions.</p>
+    </article>
+
+    <article>
+      <div class="icon">◈</div>
+      <h3>Beautiful Quality</h3>
+      <p>Graceful designs, rich colours and carefully selected styles.</p>
+    </article>
+
+    <article>
+      <div class="icon">♡</div>
+      <h3>Online Shopping</h3>
+      <p>Add your favourites to the cart and complete your order online.</p>
+    </article>
+
+  </div>
+
+</section>
+
+
+<section id="collections" class="section">
+
+  <div class="section-label">
+    MudduGumma Collection
+  </div>
+
+  <h2>
+    Shop our
+    <span>latest sarees.</span>
+  </h2>
+
+  <p class="lead">
+    Browse our newest arrivals. Products added from the MudduGumma
+    Admin panel automatically appear here.
+  </p>
+
+  <div id="productGrid" class="product-grid">
+    <p>Loading products...</p>
+  </div>
+
+</section>
+
+
+<section id="notify" class="notify section">
+
+  <div>
+    <span class="eyebrow">Stay connected</span>
+    <h2>Be first to know.</h2>
+    <p>Leave your details and we'll keep you updated about new collections and offers.</p>
+  </div>
+
+  <form id="notifyForm" class="notify-form">
+
+    <label>
+      <span>Your name</span>
+      <input id="name" type="text" placeholder="Enter your name" required />
+    </label>
+
+    <label>
+      <span>Email address</span>
+      <input id="email" type="email" placeholder="you@example.com" required />
+    </label>
+
+    <button class="button primary" type="submit">
+      Notify me
+    </button>
+
+    <p id="formMessage" class="form-message" role="status"></p>
+
+  </form>
+
+</section>
+
+</main>
+
+
+<section class="contact-strip">
+
+  <div>
+    <span class="eyebrow">Talk to us</span>
+    <h2>Need help?</h2>
+    <p>Contact MudduGumma for product or order-related enquiries.</p>
+  </div>
+
+  <div class="contact-actions">
+
+    <a
+      class="contact-card whatsapp-card"
+      href="https://wa.me/919502026724?text=Hello%20Tejaswini%2C%20I%27m%20interested%20in%20MudduGumma%20Women%27s%20Wear."
+      target="_blank"
+      rel="noopener"
+    >
+      <span class="contact-icon">☏</span>
+      <span>
+        <strong>WhatsApp Enquiries</strong>
+        <small>Chat with Tejaswini</small>
+      </span>
+    </a>
+
+    <a class="contact-card" href="tel:+919502026724">
+      <span class="contact-icon">☎</span>
+      <span>
+        <strong>Call Us</strong>
+        <small>+91 95020 26724</small>
+      </span>
+    </a>
+
+  </div>
+
+</section>
+
+
+<footer id="contact">
+
+  <div class="footer-brand">
+    <div class="footer-name">MudduGumma</div>
+    <div>Women's Wear</div>
+  </div>
+
+  <div class="footer-links">
+    <a href="#home">Home</a>
+    <a href="#about">About</a>
+    <a href="#collections">Collections</a>
+    <a href="#contact">Contact</a>
+  </div>
+
+  <div class="copyright">
+    <a href="tel:+919502026724">+91 95020 26724</a>
+    · © <span id="year"></span> MudduGumma Women's Wear.
+  </div>
+
+</footer>
+
+
+<!-- CART OVERLAY -->
+
+<div id="cartOverlay" class="cart-overlay" onclick="closeCart()"></div>
+
+
+<!-- CART DRAWER -->
+
+<aside id="cartDrawer" class="cart-drawer">
+
+  <div class="cart-header">
+
+    <div>
+      <span class="eyebrow">Your Shopping Bag</span>
+      <h2>Cart</h2>
+    </div>
+
+    <button class="cart-close" onclick="closeCart()" aria-label="Close cart">
+      ×
+    </button>
+
+  </div>
+
+
+  <div id="cartItems" class="cart-items"></div>
+
+
+  <div class="cart-summary">
+
+    <div class="cart-total-row">
+      <span>Subtotal</span>
+      <strong id="cartTotal">₹0</strong>
+    </div>
+
+    <p class="cart-note">
+      Shipping and final order details will be shown at checkout.
+    </p>
+
+    <button class="checkout-button" onclick="goToCheckout()">
+      Proceed to Checkout
+    </button>
+
+    <button class="continue-shopping" onclick="closeCart()">
+      Continue Shopping
+    </button>
+
+  </div>
+
+</aside>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
