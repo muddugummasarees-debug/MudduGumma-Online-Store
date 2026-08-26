@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Checkout | MudduGumma Women's Wear</title>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <style>
     *{
@@ -12,13 +15,13 @@
 
     body{
       margin:0;
-      font-family:Arial, sans-serif;
+      font-family:Arial,sans-serif;
       background:#fffaf7;
       color:#3c2330;
     }
 
     header{
-      background:#ffffff;
+      background:#fff;
       border-bottom:1px solid #eadde1;
       padding:20px 7%;
       display:flex;
@@ -48,7 +51,7 @@
     }
 
     .box{
-      background:white;
+      background:#fff;
       border:1px solid #eadde1;
       border-radius:18px;
       padding:28px;
@@ -73,7 +76,8 @@
       font-size:14px;
     }
 
-    input, textarea{
+    input,
+    textarea{
       width:100%;
       border:1px solid #ddd;
       border-radius:9px;
@@ -160,11 +164,31 @@
       background:#780b35;
     }
 
+    .pay-button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
     .secure{
       text-align:center;
       color:#777;
       font-size:12px;
       margin-top:12px;
+    }
+
+    .message{
+      margin-top:14px;
+      font-size:13px;
+      text-align:center;
+      line-height:1.5;
+    }
+
+    .error{
+      color:#b32643;
+    }
+
+    .success{
+      color:#247649;
     }
 
     .empty{
@@ -192,12 +216,11 @@
   <a class="back" href="/">← Continue Shopping</a>
 </header>
 
-<div class="checkout-wrapper">
+<div class="checkout-wrapper" id="checkoutWrapper">
 
   <section class="box">
 
     <h1>Checkout</h1>
-
     <h2>Delivery Details</h2>
 
     <form id="checkoutForm">
@@ -213,6 +236,7 @@
             id="mobile"
             type="tel"
             maxlength="10"
+            inputmode="numeric"
             required
           >
         </div>
@@ -257,6 +281,7 @@
             id="pincode"
             type="text"
             maxlength="6"
+            inputmode="numeric"
             required
           >
         </div>
@@ -271,7 +296,6 @@
     </form>
 
   </section>
-
 
   <aside class="box">
 
@@ -297,12 +321,15 @@
     <div class="payment-box">
       <strong>Online Payment Only</strong>
       <p>
-        Pay securely online. Cash on Delivery is not available.
+        Pay securely through Razorpay.
+        Cash on Delivery is not available.
       </p>
     </div>
 
     <button
+      id="payButton"
       class="pay-button"
+      type="button"
       onclick="continuePayment()"
     >
       PROCEED TO ONLINE PAYMENT
@@ -312,37 +339,73 @@
       🔒 Secure Online Checkout
     </div>
 
+    <div id="paymentMessage" class="message"></div>
+
   </aside>
 
 </div>
-
 
 <script>
 
 let cart = [];
 
 try{
-  cart = JSON.parse(
-    localStorage.getItem("muddugummaCart")
-  ) || [];
+  cart =
+    JSON.parse(
+      localStorage.getItem("muddugummaCart") || "[]"
+    );
 }catch(e){
   cart = [];
 }
 
-const orderItems =
-  document.getElementById("orderItems");
 
-let subtotal = 0;
+function escapeHTML(value){
+  return String(value || "")
+    .replace(/[&<>"']/g,function(character){
+
+      const map = {
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#039;"
+      };
+
+      return map[character];
+
+    });
+}
 
 
 function money(value){
+
   return "₹" +
     Number(value || 0)
       .toLocaleString("en-IN");
+
+}
+
+
+function showMessage(text,type){
+
+  const message =
+    document.getElementById("paymentMessage");
+
+  message.textContent = text;
+
+  message.className =
+    "message " + (type || "");
+
 }
 
 
 function renderOrder(){
+
+  const orderItems =
+    document.getElementById("orderItems");
+
+  let subtotal = 0;
+
 
   if(!cart.length){
 
@@ -356,38 +419,55 @@ function renderOrder(){
       .textContent = "₹0";
 
     return;
+
   }
 
 
   orderItems.innerHTML =
-    cart.map(item => {
+    cart.map(function(item){
 
       const qty =
-        Number(item.qty || item.quantity || 1);
+        Number(
+          item.quantity ||
+          item.qty ||
+          1
+        );
 
       const price =
-        Number(item.price || 0);
+        Number(
+          item.price ||
+          0
+        );
 
-      subtotal += price * qty;
+      subtotal +=
+        price * qty;
 
       const image =
         item.image ||
-        (item.images && item.images[0]) ||
+        (
+          item.images &&
+          item.images[0]
+        ) ||
         "";
 
+
       return `
+
         <div class="order-item">
 
           ${
             image
-            ? `<img src="${image}" alt="">`
-            : ""
+              ? `<img src="${escapeHTML(image)}" alt="">`
+              : ""
           }
 
           <div>
 
             <h3>
-              ${item.name || "MudduGumma Product"}
+              ${escapeHTML(
+                item.name ||
+                "MudduGumma Product"
+              )}
             </h3>
 
             <div>
@@ -401,68 +481,503 @@ function renderOrder(){
           </div>
 
         </div>
+
       `;
 
     }).join("");
 
 
   document.getElementById("subtotal")
-    .textContent = money(subtotal);
+    .textContent =
+      money(subtotal);
 
   document.getElementById("total")
-    .textContent = money(subtotal);
+    .textContent =
+      money(subtotal);
+
 }
 
 
-function continuePayment(){
+function getCustomer(){
+
+  return {
+
+    name:
+      document
+        .getElementById("customerName")
+        .value
+        .trim(),
+
+    mobile:
+      document
+        .getElementById("mobile")
+        .value
+        .trim(),
+
+    email:
+      document
+        .getElementById("email")
+        .value
+        .trim(),
+
+    address:
+      document
+        .getElementById("address")
+        .value
+        .trim(),
+
+    city:
+      document
+        .getElementById("city")
+        .value
+        .trim(),
+
+    state:
+      document
+        .getElementById("state")
+        .value
+        .trim(),
+
+    pincode:
+      document
+        .getElementById("pincode")
+        .value
+        .trim()
+
+  };
+
+}
+
+
+function validateCustomer(customer){
+
+  if(
+    !customer.name ||
+    !customer.mobile ||
+    !customer.email ||
+    !customer.address ||
+    !customer.city ||
+    !customer.state ||
+    !customer.pincode
+  ){
+    return "Please fill in all delivery details.";
+  }
+
+
+  if(
+    !/^[0-9]{10}$/.test(
+      customer.mobile
+    )
+  ){
+    return "Please enter a valid 10-digit mobile number.";
+  }
+
+
+  if(
+    !/^[0-9]{6}$/.test(
+      customer.pincode
+    )
+  ){
+    return "Please enter a valid 6-digit PIN code.";
+  }
+
+
+  return "";
+
+}
+
+
+async function continuePayment(){
 
   const form =
     document.getElementById("checkoutForm");
+
+  const button =
+    document.getElementById("payButton");
+
 
   if(!form.reportValidity()){
     return;
   }
 
+
   if(!cart.length){
-    alert(
-      "Your cart is empty. Please add a saree first."
+
+    showMessage(
+      "Your cart is empty.",
+      "error"
     );
+
     return;
+
   }
 
-  const customer = {
 
-    name:
-      document.getElementById("customerName").value,
+  const customer =
+    getCustomer();
 
-    mobile:
-      document.getElementById("mobile").value,
 
-    email:
-      document.getElementById("email").value,
+  const validation =
+    validateCustomer(customer);
 
-    address:
-      document.getElementById("address").value,
 
-    city:
-      document.getElementById("city").value,
+  if(validation){
 
-    state:
-      document.getElementById("state").value,
+    showMessage(
+      validation,
+      "error"
+    );
 
-    pincode:
-      document.getElementById("pincode").value
+    return;
 
-  };
+  }
 
-  localStorage.setItem(
-    "muddugummaCustomer",
-    JSON.stringify(customer)
+
+  button.disabled = true;
+
+  button.textContent =
+    "PREPARING PAYMENT...";
+
+
+  showMessage(
+    "Creating secure payment order...",
+    ""
   );
 
-  alert(
-    "Checkout details saved. Next we will connect your secure online payment gateway."
-  );
+
+  try{
+
+    const createResponse =
+      await fetch(
+        "/api/create-order",
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+
+              customer:customer,
+
+              items:
+                cart.map(
+                  function(item){
+
+                    return {
+
+                      id:item.id,
+
+                      quantity:
+                        Number(
+                          item.quantity ||
+                          item.qty ||
+                          1
+                        )
+
+                    };
+
+                  }
+                )
+
+            })
+        }
+      );
+
+
+    const order =
+      await createResponse.json();
+
+
+    if(!createResponse.ok){
+
+      throw new Error(
+        order.error ||
+        "Could not create payment order."
+      );
+
+    }
+
+
+    if(typeof Razorpay === "undefined"){
+
+      throw new Error(
+        "Razorpay Checkout could not load. Please refresh and try again."
+      );
+
+    }
+
+
+    const options = {
+
+      key:
+        order.keyId,
+
+      amount:
+        order.amount,
+
+      currency:
+        order.currency || "INR",
+
+      name:
+        "MudduGumma Women's Wear",
+
+      description:
+        "MudduGumma Order",
+
+      order_id:
+        order.razorpayOrderId,
+
+      prefill:{
+
+        name:
+          customer.name,
+
+        email:
+          customer.email,
+
+        contact:
+          customer.mobile
+
+      },
+
+      theme:{
+        color:"#a90f48"
+      },
+
+
+      handler:
+        async function(paymentResponse){
+
+          button.disabled = true;
+
+          button.textContent =
+            "VERIFYING PAYMENT...";
+
+
+          showMessage(
+            "Payment received. Verifying your order...",
+            ""
+          );
+
+
+          try{
+
+            const verifyResponse =
+              await fetch(
+                "/api/verify-payment",
+                {
+                  method:"POST",
+
+                  headers:{
+                    "Content-Type":
+                      "application/json"
+                  },
+
+                  body:
+                    JSON.stringify({
+
+                      razorpay_payment_id:
+                        paymentResponse
+                          .razorpay_payment_id,
+
+                      razorpay_order_id:
+                        paymentResponse
+                          .razorpay_order_id,
+
+                      razorpay_signature:
+                        paymentResponse
+                          .razorpay_signature
+
+                    })
+                }
+              );
+
+
+            const result =
+              await verifyResponse.json();
+
+
+            if(
+              !verifyResponse.ok ||
+              !result.ok
+            ){
+
+              throw new Error(
+                result.error ||
+                "Payment verification failed."
+              );
+
+            }
+
+
+            localStorage.removeItem(
+              "muddugummaCart"
+            );
+
+
+            cart = [];
+
+
+            document
+              .getElementById(
+                "checkoutWrapper"
+              )
+              .innerHTML = `
+
+                <div
+                  class="box"
+                  style="
+                    grid-column:1/-1;
+                    text-align:center;
+                    padding:55px 25px;
+                  "
+                >
+
+                  <div
+                    style="
+                      font-size:55px;
+                      color:#247649;
+                    "
+                  >
+                    ✓
+                  </div>
+
+                  <h1>
+                    Order Confirmed
+                  </h1>
+
+                  <p>
+                    Thank you for shopping with MudduGumma.
+                  </p>
+
+                  <p>
+                    Order ID:
+                    <strong>
+                      ${escapeHTML(
+                        result.orderId
+                      )}
+                    </strong>
+                  </p>
+
+                  <a
+                    href="/"
+                    style="
+                      display:inline-block;
+                      margin-top:18px;
+                      padding:14px 22px;
+                      background:#a90f48;
+                      color:white;
+                      border-radius:9px;
+                      text-decoration:none;
+                      font-weight:700;
+                    "
+                  >
+                    CONTINUE SHOPPING
+                  </a>
+
+                </div>
+
+              `;
+
+          }catch(error){
+
+            button.disabled = false;
+
+            button.textContent =
+              "PROCEED TO ONLINE PAYMENT";
+
+
+            showMessage(
+              error.message ||
+              "Could not verify payment.",
+              "error"
+            );
+
+          }
+
+        },
+
+
+      modal:{
+
+        ondismiss:function(){
+
+          button.disabled = false;
+
+          button.textContent =
+            "PROCEED TO ONLINE PAYMENT";
+
+
+          showMessage(
+            "Payment window closed. You can try again.",
+            ""
+          );
+
+        }
+
+      }
+
+    };
+
+
+    const razorpay =
+      new Razorpay(options);
+
+
+    razorpay.on(
+      "payment.failed",
+      function(response){
+
+        button.disabled = false;
+
+        button.textContent =
+          "PROCEED TO ONLINE PAYMENT";
+
+
+        showMessage(
+          response.error &&
+          response.error.description
+            ? response.error.description
+            : "Payment failed. Please try again.",
+          "error"
+        );
+
+      }
+    );
+
+
+    razorpay.open();
+
+
+    button.disabled = false;
+
+    button.textContent =
+      "PROCEED TO ONLINE PAYMENT";
+
+
+  }catch(error){
+
+    console.error(error);
+
+
+    button.disabled = false;
+
+    button.textContent =
+      "PROCEED TO ONLINE PAYMENT";
+
+
+    showMessage(
+      error.message ||
+      "Could not start payment.",
+      "error"
+    );
+
+  }
+
 }
 
 
