@@ -1,0 +1,9 @@
+{
+  "name": "muddugumma-online-store",
+  "version": "1.0.0",
+  "description": "MudduGumma Women's Wear Online Store",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
