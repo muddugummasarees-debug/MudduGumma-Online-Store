@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "muddugumma-store",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-27",
+
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*",
+      "/admin",
+      "/checkout"
+    ]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "muddugumma-store",
+      "database_id": "634e1ffd-4d86-4a52-968f-e3dd4b0a48ff"
+    }
+  ]
+}
