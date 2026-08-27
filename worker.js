@@ -1,5 +1,8 @@
 const COOKIE_NAME = "mg_admin";
 const SESSION_SECONDS = 12 * 60 * 60;
+const CUSTOMER_COOKIE_NAME = "mg_customer";
+const CUSTOMER_SESSION_SECONDS = 30 * 24 * 60 * 60;
+const PASSWORD_ITERATIONS = 100000;
 
 export default {
   async fetch(request, env) {
@@ -149,6 +152,432 @@ export default {
               env
             )
         });
+      }
+
+      // ==========================================
+      // CUSTOMER REGISTER
+      // ==========================================
+
+      if (
+        path === "/api/customer/register" &&
+        request.method === "POST"
+      ) {
+        const body =
+          await readJson(request);
+
+        const name =
+          cleanText(
+            body.name,
+            200
+          );
+
+        const email =
+          cleanText(
+            body.email,
+            300
+          )
+          .toLowerCase();
+
+        const phone =
+          cleanText(
+            body.phone || body.mobile,
+            50
+          );
+
+        const password =
+          String(
+            body.password || ""
+          );
+
+        if (
+          !name ||
+          !email ||
+          !phone ||
+          !password
+        ) {
+          return json(
+            {
+              error:
+                "Name, email, mobile number and password are required."
+            },
+            400
+          );
+        }
+
+        if (
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            .test(email)
+        ) {
+          return json(
+            {
+              error:
+                "Please enter a valid email address."
+            },
+            400
+          );
+        }
+
+        if (
+          !/^[0-9]{10}$/
+            .test(phone)
+        ) {
+          return json(
+            {
+              error:
+                "Please enter a valid 10-digit mobile number."
+            },
+            400
+          );
+        }
+
+        if (
+          password.length < 8
+        ) {
+          return json(
+            {
+              error:
+                "Password must contain at least 8 characters."
+            },
+            400
+          );
+        }
+
+        const existing =
+          await env.DB
+            .prepare(`
+              SELECT id
+              FROM customer_accounts
+              WHERE email = ?
+            `)
+            .bind(email)
+            .first();
+
+        if (existing) {
+          return json(
+            {
+              error:
+                "An account already exists with this email."
+            },
+            409
+          );
+        }
+
+        const salt =
+          randomHex(16);
+
+        const passwordHash =
+          await hashCustomerPassword(
+            password,
+            salt
+          );
+
+        const now =
+          new Date()
+            .toISOString();
+
+        const result =
+          await env.DB
+            .prepare(`
+              INSERT INTO customer_accounts (
+                name,
+                email,
+                phone,
+                password_hash,
+                password_salt,
+                created_at,
+                updated_at
+              )
+
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `)
+            .bind(
+              name,
+              email,
+              phone,
+              passwordHash,
+              salt,
+              now,
+              now
+            )
+            .run();
+
+        const customerId =
+          Number(
+            result.meta.last_row_id
+          );
+
+        const sessionToken =
+          randomHex(32);
+
+        const tokenHash =
+          await digestHex(
+            "SHA-256",
+            sessionToken
+          );
+
+        const expiresAt =
+          new Date(
+            Date.now() +
+            CUSTOMER_SESSION_SECONDS * 1000
+          )
+          .toISOString();
+
+        await env.DB
+          .prepare(`
+            INSERT INTO customer_sessions (
+              token_hash,
+              customer_id,
+              expires_at,
+              created_at
+            )
+
+            VALUES (?, ?, ?, ?)
+          `)
+          .bind(
+            tokenHash,
+            customerId,
+            expiresAt,
+            now
+          )
+          .run();
+
+        return json(
+          {
+            ok: true,
+            customer: {
+              id:
+                customerId,
+              name,
+              email,
+              phone
+            }
+          },
+          200,
+          {
+            "Set-Cookie":
+              customerSessionCookie(
+                sessionToken
+              )
+          }
+        );
+      }
+
+      // ==========================================
+      // CUSTOMER LOGIN
+      // ==========================================
+
+      if (
+        path === "/api/customer/login" &&
+        request.method === "POST"
+      ) {
+        const body =
+          await readJson(request);
+
+        const email =
+          cleanText(
+            body.email,
+            300
+          )
+          .toLowerCase();
+
+        const password =
+          String(
+            body.password || ""
+          );
+
+        if (
+          !email ||
+          !password
+        ) {
+          return json(
+            {
+              error:
+                "Email and password are required."
+            },
+            400
+          );
+        }
+
+        const account =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                name,
+                email,
+                phone,
+                password_hash,
+                password_salt
+              FROM customer_accounts
+              WHERE email = ?
+            `)
+            .bind(email)
+            .first();
+
+        if (!account) {
+          return json(
+            {
+              error:
+                "Invalid email or password."
+            },
+            401
+          );
+        }
+
+        const passwordHash =
+          await hashCustomerPassword(
+            password,
+            account.password_salt
+          );
+
+        if (
+          !safeEqualText(
+            passwordHash,
+            account.password_hash
+          )
+        ) {
+          return json(
+            {
+              error:
+                "Invalid email or password."
+            },
+            401
+          );
+        }
+
+        const sessionToken =
+          randomHex(32);
+
+        const tokenHash =
+          await digestHex(
+            "SHA-256",
+            sessionToken
+          );
+
+        const now =
+          new Date()
+            .toISOString();
+
+        const expiresAt =
+          new Date(
+            Date.now() +
+            CUSTOMER_SESSION_SECONDS * 1000
+          )
+          .toISOString();
+
+        await env.DB
+          .prepare(`
+            INSERT INTO customer_sessions (
+              token_hash,
+              customer_id,
+              expires_at,
+              created_at
+            )
+            VALUES (?, ?, ?, ?)
+          `)
+          .bind(
+            tokenHash,
+            account.id,
+            expiresAt,
+            now
+          )
+          .run();
+
+        return json(
+          {
+            ok: true,
+            customer: {
+              id:
+                Number(account.id),
+              name:
+                account.name,
+              email:
+                account.email,
+              phone:
+                account.phone
+            }
+          },
+          200,
+          {
+            "Set-Cookie":
+              customerSessionCookie(
+                sessionToken
+              )
+          }
+        );
+      }
+
+      // ==========================================
+      // CUSTOMER LOGIN STATUS
+      // ==========================================
+
+      if (
+        path === "/api/customer/me" &&
+        request.method === "GET"
+      ) {
+        const session =
+          await getCustomerSession(
+            request,
+            env
+          );
+
+        if (!session) {
+          return json({
+            authenticated:
+              false,
+            customer:
+              null
+          });
+        }
+
+        return json({
+          authenticated:
+            true,
+          customer:
+            session.customer
+        });
+      }
+
+      // ==========================================
+      // CUSTOMER LOGOUT
+      // ==========================================
+
+      if (
+        path === "/api/customer/logout" &&
+        request.method === "POST"
+      ) {
+        const sessionToken =
+          getCookie(
+            request,
+            CUSTOMER_COOKIE_NAME
+          );
+
+        if (sessionToken) {
+          const tokenHash =
+            await digestHex(
+              "SHA-256",
+              sessionToken
+            );
+
+          await env.DB
+            .prepare(`
+              DELETE FROM customer_sessions
+              WHERE token_hash = ?
+            `)
+            .bind(tokenHash)
+            .run();
+        }
+
+        return json(
+          {
+            ok: true
+          },
+          200,
+          {
+            "Set-Cookie":
+              clearCustomerSessionCookie()
+          }
+        );
       }
 
       // ==========================================
@@ -1007,11 +1436,12 @@ export default {
           await env.DB
             .prepare(`
               SELECT
-  id,
-  items,
-  customer,
-  amount,
-  status              FROM orders
+                id,
+                items,
+                customer,
+                amount,
+                status
+              FROM orders
               WHERE razorpay_order_id = ?
             `)
             .bind(orderId)
@@ -1109,7 +1539,12 @@ export default {
           );
         }
 
-                // ==========================================
+        await env.DB
+          .batch(
+            statements
+          );
+
+        // ==========================================
         // SEND ORDER EMAIL NOTIFICATION
         // ==========================================
 
@@ -1504,7 +1939,7 @@ function sanitizeCustomer(
 
     phone:
       cleanText(
-        value.phone,
+        value.phone || value.mobile,
         50
       ),
 
@@ -1571,6 +2006,206 @@ function getCookie(
   }
 
   return "";
+}
+
+
+// ==========================================
+// CUSTOMER AUTH HELPERS
+// ==========================================
+
+function randomHex(
+  byteLength
+) {
+  const bytes =
+    new Uint8Array(
+      byteLength
+    );
+
+  crypto.getRandomValues(
+    bytes
+  );
+
+  return bytesToHex(
+    bytes
+  );
+}
+
+
+async function hashCustomerPassword(
+  password,
+  salt
+) {
+  const encoder =
+    new TextEncoder();
+
+  const key =
+    await crypto.subtle
+      .importKey(
+        "raw",
+        encoder.encode(
+          String(password)
+        ),
+        "PBKDF2",
+        false,
+        ["deriveBits"]
+      );
+
+  const bits =
+    await crypto.subtle
+      .deriveBits(
+        {
+          name:
+            "PBKDF2",
+          hash:
+            "SHA-256",
+          salt:
+            encoder.encode(
+              String(salt)
+            ),
+          iterations:
+            PASSWORD_ITERATIONS
+        },
+        key,
+        256
+      );
+
+  return bytesToHex(
+    new Uint8Array(
+      bits
+    )
+  );
+}
+
+
+function safeEqualText(
+  first,
+  second
+) {
+  first =
+    String(first || "");
+
+  second =
+    String(second || "");
+
+  if (
+    first.length !==
+    second.length
+  ) {
+    return false;
+  }
+
+  let difference = 0;
+
+  for (
+    let index = 0;
+    index < first.length;
+    index++
+  ) {
+    difference |=
+      first.charCodeAt(index) ^
+      second.charCodeAt(index);
+  }
+
+  return difference === 0;
+}
+
+
+function customerSessionCookie(
+  token
+) {
+  return (
+    `${CUSTOMER_COOKIE_NAME}=${token}; ` +
+    `Path=/; HttpOnly; Secure; ` +
+    `SameSite=Lax; ` +
+    `Max-Age=${CUSTOMER_SESSION_SECONDS}`
+  );
+}
+
+
+function clearCustomerSessionCookie() {
+  return (
+    `${CUSTOMER_COOKIE_NAME}=; ` +
+    `Path=/; HttpOnly; Secure; ` +
+    `SameSite=Lax; Max-Age=0`
+  );
+}
+
+
+async function getCustomerSession(
+  request,
+  env
+) {
+  const sessionToken =
+    getCookie(
+      request,
+      CUSTOMER_COOKIE_NAME
+    );
+
+  if (!sessionToken) {
+    return null;
+  }
+
+  const tokenHash =
+    await digestHex(
+      "SHA-256",
+      sessionToken
+    );
+
+  const row =
+    await env.DB
+      .prepare(`
+        SELECT
+          s.token_hash,
+          s.expires_at,
+          a.id,
+          a.name,
+          a.email,
+          a.phone
+        FROM customer_sessions s
+        JOIN customer_accounts a
+          ON a.id = s.customer_id
+        WHERE s.token_hash = ?
+      `)
+      .bind(tokenHash)
+      .first();
+
+  if (!row) {
+    return null;
+  }
+
+  const expiresTime =
+    Date.parse(
+      row.expires_at
+    );
+
+  if (
+    !expiresTime ||
+    expiresTime <= Date.now()
+  ) {
+    await env.DB
+      .prepare(`
+        DELETE FROM customer_sessions
+        WHERE token_hash = ?
+      `)
+      .bind(tokenHash)
+      .run();
+
+    return null;
+  }
+
+  return {
+    tokenHash,
+    customer: {
+      id:
+        Number(row.id),
+      name:
+        row.name,
+      email:
+        row.email,
+      phone:
+        row.phone
+    }
+  };
 }
 
 
