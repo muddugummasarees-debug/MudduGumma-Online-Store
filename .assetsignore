@@ -1,0 +1,8 @@
+worker.js
+server.js
+package.json
+wrangler.jsonc
+.assetsignore
+shop/data/
+node_modules/
+.git/
