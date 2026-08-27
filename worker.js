@@ -1007,10 +1007,11 @@ export default {
           await env.DB
             .prepare(`
               SELECT
-                id,
-                items,
-                status
-              FROM orders
+  id,
+  items,
+  customer,
+  amount,
+  status              FROM orders
               WHERE razorpay_order_id = ?
             `)
             .bind(orderId)
@@ -1108,11 +1109,106 @@ export default {
           );
         }
 
-        await env.DB
-          .batch(
-            statements
-          );
+                // ==========================================
+        // SEND ORDER EMAIL NOTIFICATION
+        // ==========================================
 
+        if (env.RESEND_API_KEY) {
+          try {
+            let customer = {};
+
+            try {
+              customer =
+                JSON.parse(
+                  order.customer || "{}"
+                );
+            } catch {
+              customer = {};
+            }
+
+            const itemLines =
+              items
+                .map(
+                  item =>
+                    `${item.name} - Qty: ${item.quantity} - ₹${item.price}`
+                )
+                .join("\n");
+
+            const emailText =
+`New MudduGumma Order
+
+Order ID: ${order.id}
+Payment ID: ${paymentId}
+Payment Status: PAID
+Amount: ₹${order.amount}
+
+CUSTOMER DETAILS
+Name: ${customer.name || "-"}
+Email: ${customer.email || "-"}
+Phone: ${customer.phone || "-"}
+
+DELIVERY ADDRESS
+Address: ${customer.address || "-"}
+City: ${customer.city || "-"}
+State: ${customer.state || "-"}
+Pincode: ${customer.pincode || "-"}
+
+ORDER ITEMS
+${itemLines}
+
+Payment received successfully through Razorpay.`;
+
+            const emailResponse =
+              await fetch(
+                "https://api.resend.com/emails",
+                {
+                  method: "POST",
+
+                  headers: {
+                    "Authorization":
+                      `Bearer ${env.RESEND_API_KEY}`,
+
+                    "Content-Type":
+                      "application/json"
+                  },
+
+                  body:
+                    JSON.stringify({
+                      from:
+                        "MudduGumma Orders <onboarding@resend.dev>",
+
+                      to: [
+                        "muddugummasarees@gmail.com"
+                      ],
+
+                      subject:
+                        `New Paid Order - ${order.id}`,
+
+                      text:
+                        emailText
+                    })
+                }
+              );
+
+            if (!emailResponse.ok) {
+              const emailError =
+                await emailResponse
+                  .text();
+
+              console.error(
+                "Order email failed:",
+                emailError
+              );
+            }
+
+          } catch (emailError) {
+
+            console.error(
+              "Order email error:",
+              emailError
+            );
+          }
+        }
         return json({
           ok: true,
 
