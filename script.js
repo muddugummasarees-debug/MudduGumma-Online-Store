@@ -264,28 +264,40 @@ function productSareeSearchText(product) {
 }
 
 function getSareeTypeDefinition(product) {
-  const searchText =
-    productSareeSearchText(product);
+  const selectedFabric =
+    String(
+      product?.fabric ||
+      product?.category ||
+      ""
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/[-_]/g, " ");
 
-  const knownType =
+  const chosenType =
     sareeTypeDefinitions.find(definition =>
       definition.keywords.some(keyword =>
-        searchText.includes(keyword)
+        selectedFabric.includes(keyword)
       )
     );
 
-  if (knownType) {
-    return knownType;
+  if (chosenType) {
+    return chosenType;
   }
 
   const rawCategory =
-    String(product?.category || "").trim();
+    String(
+      product?.fabric ||
+      product?.category ||
+      ""
+    ).trim();
 
-  if (
-    rawCategory &&
-    !/^(saree|sarees|women'?s wear|collection)$/i
-      .test(rawCategory)
-  ) {
+  const genericCategory =
+    !rawCategory ||
+    /^(saree|sarees|women'?s wear|collection)$/i
+      .test(rawCategory);
+
+  if (!genericCategory) {
     const cleanLabel =
       rawCategory
         .replace(/\bsarees?\b/gi, "")
@@ -306,6 +318,23 @@ function getSareeTypeDefinition(product) {
     };
   }
 
+  const searchText =
+    productSareeSearchText({
+      ...product,
+      category: ""
+    });
+
+  const inferredType =
+    sareeTypeDefinitions.find(definition =>
+      definition.keywords.some(keyword =>
+        searchText.includes(keyword)
+      )
+    );
+
+  if (inferredType) {
+    return inferredType;
+  }
+
   return {
     id: "other-sarees",
     label: "Other Sarees",
@@ -314,6 +343,7 @@ function getSareeTypeDefinition(product) {
     keywords: []
   };
 }
+
 
 function getSareeCategories() {
   const categoryMap =
