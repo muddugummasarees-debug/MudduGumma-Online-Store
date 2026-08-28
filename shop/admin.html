@@ -167,12 +167,22 @@ img.thumb{
 </div>
 
 <div>
-  <label>Category</label>
-  <select id="category">
-    <option>Sarees</option>
-    <option>Dresses</option>
-    <option>New Arrivals</option>
-    <option>Offers</option>
+  <label>Fabric *</label>
+  <select id="category" required>
+    <option value="">Choose fabric</option>
+    <option value="Cotton">Cotton</option>
+    <option value="Silk">Silk</option>
+    <option value="Linen">Linen</option>
+    <option value="Silk Cotton">Silk Cotton</option>
+    <option value="Work Wear">Work Wear</option>
+    <option value="Kanjivaram">Kanjivaram</option>
+    <option value="Banarasi">Banarasi</option>
+    <option value="Organza">Organza</option>
+    <option value="Chiffon">Chiffon</option>
+    <option value="Georgette">Georgette</option>
+    <option value="Handloom">Handloom</option>
+    <option value="Designer">Designer Saree</option>
+    <option value="Other Sarees">Other Sarees</option>
   </select>
 </div>
 
@@ -248,7 +258,7 @@ Add new stock here every day. Changes are saved on the store server.
 <th>Product</th>
 <th>Price</th>
 <th>Stock</th>
-<th>Category</th>
+<th>Fabric</th>
 <th>Actions</th>
 </tr>
 </thead>
@@ -495,6 +505,26 @@ $('imageFile').addEventListener('change',()=>{
 
 async function saveProduct(){
 
+  const productName =
+    $('name').value.trim();
+
+  const selectedFabric =
+    $('category').value.trim();
+
+  if(!productName){
+    $('msg').textContent =
+      'Please enter the product name.';
+    $('name').focus();
+    return;
+  }
+
+  if(!selectedFabric){
+    $('msg').textContent =
+      'Please choose the fabric.';
+    $('category').focus();
+    return;
+  }
+
   const files=[...$('imageFile').files];
 
   const old=
@@ -580,9 +610,9 @@ async function saveProduct(){
 
     id:editing||undefined,
 
-    name:$('name').value,
+    name:productName,
 
-    category:$('category').value,
+    category:selectedFabric,
 
     price:Number(
       $('price').value
@@ -679,7 +709,7 @@ function resetForm(){
 
   $('stock').value=0;
 
-  $('category').value='Sarees';
+  $('category').value='';
 
   $('imagePreview').innerHTML='';
 
