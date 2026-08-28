@@ -256,12 +256,56 @@
   </div>
 
   <div id="sareeResults" class="saree-results" hidden>
-    <div class="saree-results-heading">
+    <input id="filterSearch" type="hidden" value="">
+
+    <nav class="product-breadcrumbs" aria-label="Breadcrumb">
+      <a href="#home">Home</a>
+      <span aria-hidden="true">/</span>
+      <button type="button" onclick="showSareeTypes()">Clothing</button>
+      <span aria-hidden="true">/</span>
+      <strong id="sareeBreadcrumbCurrent">Sarees</strong>
+    </nav>
+
+    <div class="product-listing-heading">
       <div>
-        <span class="eyebrow">Selected Collection</span>
         <h3 id="sareeResultsTitle">Sarees</h3>
         <p id="sareeResultsDescription"></p>
       </div>
+
+      <div class="product-listing-tools">
+        <button
+          type="button"
+          id="mobileFilterButton"
+          class="mobile-filter-button"
+          onclick="openProductFilters()"
+        >
+          Filters
+          <b id="mobileFilterCount">0</b>
+        </button>
+
+        <label class="product-sort-field">
+          <span>Sort by:</span>
+          <select
+            id="filterSort"
+            onchange="applyProductFilters()"
+          >
+            <option value="recommended">Recommended</option>
+            <option value="newest">Newest First</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="discount">Highest Discount</option>
+            <option value="name">Name: A to Z</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="product-count-row">
+      <p
+        id="filterResultCount"
+        class="product-results-count"
+        aria-live="polite"
+      ></p>
 
       <button
         type="button"
@@ -271,143 +315,202 @@
         ← Browse Saree Types
       </button>
     </div>
+
+    <div class="quick-filter-bar" aria-label="Quick filters">
+      <button type="button" data-quick-filter="newest" onclick="applyQuickProductFilter('newest')">
+        New Arrivals
+      </button>
+      <button type="button" data-quick-filter="featured" onclick="applyQuickProductFilter('featured')">
+        Recommended
+      </button>
+      <button type="button" data-quick-filter="silk" onclick="applyQuickProductFilter('fabric','silk')">
+        Silk
+      </button>
+      <button type="button" data-quick-filter="cotton" onclick="applyQuickProductFilter('fabric','cotton')">
+        Cotton
+      </button>
+      <button type="button" data-quick-filter="in-stock" onclick="applyQuickProductFilter('availability','in-stock')">
+        In Stock
+      </button>
+      <button type="button" data-quick-filter="under-999" onclick="applyQuickProductFilter('price','under-1000')">
+        Under ₹999
+      </button>
+    </div>
+
     <div
-      class="product-filter-panel"
-      aria-label="Filter sarees"
-    >
-      <div class="product-filter-title">
-        <div>
-          <span class="eyebrow">Find Your Perfect Saree</span>
-          <h4>Filter the collection</h4>
+      id="activeFilterChips"
+      class="active-filter-chips"
+      aria-live="polite"
+    ></div>
+
+    <div class="product-listing-layout">
+      <button
+        type="button"
+        id="productFilterBackdrop"
+        class="product-filter-backdrop"
+        onclick="closeProductFilters()"
+        aria-label="Close filters"
+      ></button>
+
+      <aside
+        id="productFilterSidebar"
+        class="product-filter-sidebar"
+        aria-label="Product filters"
+      >
+        <div class="product-filter-sidebar-heading">
+          <h4>Filters</h4>
+
+          <button
+            type="button"
+            class="clear-sidebar-filters"
+            onclick="resetProductFilters()"
+          >
+            Clear All
+          </button>
+
+          <button
+            type="button"
+            class="close-mobile-filters"
+            onclick="closeProductFilters()"
+            aria-label="Close filters"
+          >
+            ×
+          </button>
         </div>
+
+        <details id="filterCategoryGroup" class="sidebar-filter-group" open>
+          <summary>Category</summary>
+          <div id="filterCategoryOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details id="filterFabricGroup" class="sidebar-filter-group" open>
+          <summary>Fabric</summary>
+          <div id="filterFabricOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details class="sidebar-filter-group" open>
+          <summary>Price</summary>
+          <div class="sidebar-filter-options">
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterPrice" value="all" checked onchange="applyProductFilters()">
+              <span>All Prices</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterPrice" value="under-500" onchange="applyProductFilters()">
+              <span>Under ₹500</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterPrice" value="500-999" onchange="applyProductFilters()">
+              <span>₹500–₹999</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterPrice" value="1000-1999" onchange="applyProductFilters()">
+              <span>₹1,000–₹1,999</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterPrice" value="2000-4999" onchange="applyProductFilters()">
+              <span>₹2,000–₹4,999</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterPrice" value="5000-plus" onchange="applyProductFilters()">
+              <span>₹5,000+</span>
+            </label>
+          </div>
+        </details>
+
+        <details id="filterColorGroup" class="sidebar-filter-group" open>
+          <summary>Color</summary>
+          <div id="filterColorOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details id="filterSizeGroup" class="sidebar-filter-group">
+          <summary>Size</summary>
+          <div id="filterSizeOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details id="filterOccasionGroup" class="sidebar-filter-group">
+          <summary>Occasion</summary>
+          <div id="filterOccasionOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details id="filterPatternGroup" class="sidebar-filter-group">
+          <summary>Pattern / Design</summary>
+          <div id="filterPatternOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details id="filterWorkGroup" class="sidebar-filter-group">
+          <summary>Work</summary>
+          <div id="filterWorkOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details id="filterBorderGroup" class="sidebar-filter-group">
+          <summary>Border Type</summary>
+          <div id="filterBorderOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details id="filterBlouseGroup" class="sidebar-filter-group">
+          <summary>Blouse Piece</summary>
+          <div id="filterBlouseOptions" class="sidebar-filter-options"></div>
+        </details>
+
+        <details class="sidebar-filter-group">
+          <summary>Availability</summary>
+          <div class="sidebar-filter-options">
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterAvailability" value="all" checked onchange="applyProductFilters()">
+              <span>All Products</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterAvailability" value="in-stock" onchange="applyProductFilters()">
+              <span>In Stock</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterAvailability" value="out-of-stock" onchange="applyProductFilters()">
+              <span>Out of Stock</span>
+            </label>
+          </div>
+        </details>
+
+        <details class="sidebar-filter-group">
+          <summary>Discount</summary>
+          <div class="sidebar-filter-options">
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterDiscount" value="all" checked onchange="applyProductFilters()">
+              <span>Any Discount</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterDiscount" value="10" onchange="applyProductFilters()">
+              <span>10% and above</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterDiscount" value="20" onchange="applyProductFilters()">
+              <span>20% and above</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterDiscount" value="30" onchange="applyProductFilters()">
+              <span>30% and above</span>
+            </label>
+            <label class="sidebar-filter-option">
+              <input type="radio" name="filterDiscount" value="50" onchange="applyProductFilters()">
+              <span>50% and above</span>
+            </label>
+          </div>
+        </details>
 
         <button
           type="button"
-          id="clearFiltersButton"
-          class="clear-product-filters"
-          onclick="resetProductFilters()"
+          class="apply-mobile-filters"
+          onclick="closeProductFilters()"
         >
-          Clear Filters
+          Show Sarees
         </button>
+      </aside>
+
+      <div class="product-results-area">
+        <div id="productGrid" class="product-grid">
+          <p>Loading sarees...</p>
+        </div>
       </div>
-
-      <div class="product-filter-grid">
-        <label class="product-search-filter">
-          <span>Search</span>
-          <input
-            id="filterSearch"
-            type="search"
-            placeholder="Search sarees..."
-            oninput="applyProductFilters()"
-          >
-        </label>
-
-        <label>
-          <span>Category</span>
-          <select
-            id="filterCategory"
-            onchange="applyProductFilters()"
-          >
-            <option value="all">All Categories</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Fabric</span>
-          <select
-            id="filterFabric"
-            onchange="applyProductFilters()"
-          >
-            <option value="all">All Fabrics</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Price</span>
-          <select
-            id="filterPrice"
-            onchange="applyProductFilters()"
-          >
-            <option value="all">All Prices</option>
-            <option value="under-500">Under ₹500</option>
-            <option value="500-999">₹500–₹999</option>
-            <option value="1000-1999">₹1,000–₹1,999</option>
-            <option value="2000-4999">₹2,000–₹4,999</option>
-            <option value="5000-plus">₹5,000+</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Color</span>
-          <select
-            id="filterColor"
-            onchange="applyProductFilters()"
-          >
-            <option value="all">All Colors</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Size</span>
-          <select
-            id="filterSize"
-            onchange="applyProductFilters()"
-          >
-            <option value="all">All Sizes</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Availability</span>
-          <select
-            id="filterAvailability"
-            onchange="applyProductFilters()"
-          >
-            <option value="all">All Stock</option>
-            <option value="in-stock">In Stock</option>
-            <option value="out-of-stock">Out of Stock</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Discount</span>
-          <select
-            id="filterDiscount"
-            onchange="applyProductFilters()"
-          >
-            <option value="all">Any Discount</option>
-            <option value="10">10%+</option>
-            <option value="20">20%+</option>
-            <option value="30">30%+</option>
-            <option value="40">40%+</option>
-            <option value="50">50%+</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Sort By</span>
-          <select
-            id="filterSort"
-            onchange="applyProductFilters()"
-          >
-            <option value="newest">Newest First</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="discount">Highest Discount</option>
-            <option value="name">Name: A to Z</option>
-          </select>
-        </label>
-      </div>
-
-      <p
-        id="filterResultCount"
-        class="product-results-count"
-        aria-live="polite"
-      ></p>
-    </div>
-
-    <div id="productGrid" class="product-grid">
-      <p>Loading sarees...</p>
     </div>
   </div>
 
