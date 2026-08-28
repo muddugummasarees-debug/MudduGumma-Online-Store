@@ -216,7 +216,83 @@
         ← Browse Saree Types
       </button>
     </div>
+<div class="shop-filters">
 
+  <div class="filter-field">
+    <label for="filterCategory">Category</label>
+    <select id="filterCategory">
+      <option value="">All Categories</option>
+    </select>
+  </div>
+
+  <div class="filter-field">
+    <label for="filterPrice">Price</label>
+    <select id="filterPrice">
+      <option value="">All Prices</option>
+      <option value="0-499">Under ₹500</option>
+      <option value="500-999">₹500 – ₹999</option>
+      <option value="1000-1999">₹1,000 – ₹1,999</option>
+      <option value="2000-4999">₹2,000 – ₹4,999</option>
+      <option value="5000+">₹5,000+</option>
+    </select>
+  </div>
+
+  <div class="filter-field">
+    <label for="filterColor">Color</label>
+    <select id="filterColor">
+      <option value="">All Colors</option>
+    </select>
+  </div>
+
+  <div class="filter-field">
+    <label for="filterSize">Size</label>
+    <select id="filterSize">
+      <option value="">All Sizes</option>
+    </select>
+  </div>
+
+  <div class="filter-field">
+    <label for="filterAvailability">Availability</label>
+    <select id="filterAvailability">
+      <option value="">All Products</option>
+      <option value="instock">In Stock</option>
+      <option value="outofstock">Out of Stock</option>
+    </select>
+  </div>
+
+  <div class="filter-field">
+    <label for="filterDiscount">Discount</label>
+    <select id="filterDiscount">
+      <option value="">Any Discount</option>
+      <option value="10">10%+</option>
+      <option value="20">20%+</option>
+      <option value="30">30%+</option>
+      <option value="40">40%+</option>
+      <option value="50">50%+</option>
+    </select>
+  </div>
+
+  <div class="filter-field">
+    <label for="filterSort">Sort By</label>
+    <select id="filterSort">
+      <option value="newest">Newest First</option>
+      <option value="price-low">Price Low to High</option>
+      <option value="price-high">Price High to Low</option>
+      <option value="discount">Highest Discount</option>
+    </select>
+  </div>
+
+  <button
+    type="button"
+    id="clearFiltersButton"
+    class="clear-filters-button"
+  >
+    Clear Filters
+  </button>
+
+</div>
+
+<div id="filterResultCount" class="filter-result-count"></div>
     <div id="productGrid" class="product-grid">
       <p>Loading sarees...</p>
     </div>
