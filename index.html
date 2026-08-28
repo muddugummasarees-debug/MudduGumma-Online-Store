@@ -216,83 +216,141 @@
         ← Browse Saree Types
       </button>
     </div>
-<div class="shop-filters">
+    <div
+      class="product-filter-panel"
+      aria-label="Filter sarees"
+    >
+      <div class="product-filter-title">
+        <div>
+          <span class="eyebrow">Find Your Perfect Saree</span>
+          <h4>Filter the collection</h4>
+        </div>
 
-  <div class="filter-field">
-    <label for="filterCategory">Category</label>
-    <select id="filterCategory">
-      <option value="">All Categories</option>
-    </select>
-  </div>
+        <button
+          type="button"
+          id="clearFiltersButton"
+          class="clear-product-filters"
+          onclick="resetProductFilters()"
+        >
+          Clear Filters
+        </button>
+      </div>
 
-  <div class="filter-field">
-    <label for="filterPrice">Price</label>
-    <select id="filterPrice">
-      <option value="">All Prices</option>
-      <option value="0-499">Under ₹500</option>
-      <option value="500-999">₹500 – ₹999</option>
-      <option value="1000-1999">₹1,000 – ₹1,999</option>
-      <option value="2000-4999">₹2,000 – ₹4,999</option>
-      <option value="5000+">₹5,000+</option>
-    </select>
-  </div>
+      <div class="product-filter-grid">
+        <label class="product-search-filter">
+          <span>Search</span>
+          <input
+            id="filterSearch"
+            type="search"
+            placeholder="Search sarees..."
+            oninput="applyProductFilters()"
+          >
+        </label>
 
-  <div class="filter-field">
-    <label for="filterColor">Color</label>
-    <select id="filterColor">
-      <option value="">All Colors</option>
-    </select>
-  </div>
+        <label>
+          <span>Category</span>
+          <select
+            id="filterCategory"
+            onchange="applyProductFilters()"
+          >
+            <option value="all">All Categories</option>
+          </select>
+        </label>
 
-  <div class="filter-field">
-    <label for="filterSize">Size</label>
-    <select id="filterSize">
-      <option value="">All Sizes</option>
-    </select>
-  </div>
+        <label>
+          <span>Fabric</span>
+          <select
+            id="filterFabric"
+            onchange="applyProductFilters()"
+          >
+            <option value="all">All Fabrics</option>
+          </select>
+        </label>
 
-  <div class="filter-field">
-    <label for="filterAvailability">Availability</label>
-    <select id="filterAvailability">
-      <option value="">All Products</option>
-      <option value="instock">In Stock</option>
-      <option value="outofstock">Out of Stock</option>
-    </select>
-  </div>
+        <label>
+          <span>Price</span>
+          <select
+            id="filterPrice"
+            onchange="applyProductFilters()"
+          >
+            <option value="all">All Prices</option>
+            <option value="under-500">Under ₹500</option>
+            <option value="500-999">₹500–₹999</option>
+            <option value="1000-1999">₹1,000–₹1,999</option>
+            <option value="2000-4999">₹2,000–₹4,999</option>
+            <option value="5000-plus">₹5,000+</option>
+          </select>
+        </label>
 
-  <div class="filter-field">
-    <label for="filterDiscount">Discount</label>
-    <select id="filterDiscount">
-      <option value="">Any Discount</option>
-      <option value="10">10%+</option>
-      <option value="20">20%+</option>
-      <option value="30">30%+</option>
-      <option value="40">40%+</option>
-      <option value="50">50%+</option>
-    </select>
-  </div>
+        <label>
+          <span>Color</span>
+          <select
+            id="filterColor"
+            onchange="applyProductFilters()"
+          >
+            <option value="all">All Colors</option>
+          </select>
+        </label>
 
-  <div class="filter-field">
-    <label for="filterSort">Sort By</label>
-    <select id="filterSort">
-      <option value="newest">Newest First</option>
-      <option value="price-low">Price Low to High</option>
-      <option value="price-high">Price High to Low</option>
-      <option value="discount">Highest Discount</option>
-    </select>
-  </div>
+        <label>
+          <span>Size</span>
+          <select
+            id="filterSize"
+            onchange="applyProductFilters()"
+          >
+            <option value="all">All Sizes</option>
+          </select>
+        </label>
 
-  <button
-    type="button"
-    id="clearFiltersButton"
-    class="clear-filters-button"
-  >
-    Clear Filters
-  </button>
+        <label>
+          <span>Availability</span>
+          <select
+            id="filterAvailability"
+            onchange="applyProductFilters()"
+          >
+            <option value="all">All Stock</option>
+            <option value="in-stock">In Stock</option>
+            <option value="out-of-stock">Out of Stock</option>
+          </select>
+        </label>
 
-</div>
+        <label>
+          <span>Discount</span>
+          <select
+            id="filterDiscount"
+            onchange="applyProductFilters()"
+          >
+            <option value="all">Any Discount</option>
+            <option value="10">10%+</option>
+            <option value="20">20%+</option>
+            <option value="30">30%+</option>
+            <option value="40">40%+</option>
+            <option value="50">50%+</option>
+          </select>
+        </label>
 
-<div id="filterResultCount" class="filter-result-count"></div>
+        <label>
+          <span>Sort By</span>
+          <select
+            id="filterSort"
+            onchange="applyProductFilters()"
+          >
+            <option value="newest">Newest First</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="discount">Highest Discount</option>
+            <option value="name">Name: A to Z</option>
+          </select>
+        </label>
+      </div>
+
+      <p
+        id="filterResultCount"
+        class="product-results-count"
+        aria-live="polite"
+      ></p>
+    </div>
+
     <div id="productGrid" class="product-grid">
       <p>Loading sarees...</p>
     </div>
