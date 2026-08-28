@@ -70,6 +70,7 @@
     class="header-icon-button"
     id="wishlistButton"
     type="button"
+    onclick="openWishlist()"
     aria-label="Wishlist"
     title="Wishlist"
   >
@@ -343,6 +344,85 @@
 
 </aside>
 
+
+<!-- WISHLIST OVERLAY -->
+
+<div
+  id="wishlistOverlay"
+  class="cart-overlay"
+  onclick="closeWishlist()"
+></div>
+
+
+<!-- WISHLIST DRAWER -->
+
+<aside
+  id="wishlistDrawer"
+  class="cart-drawer wishlist-drawer"
+  aria-labelledby="wishlistTitle"
+  aria-hidden="true"
+>
+  <div class="cart-header">
+    <div>
+      <span class="eyebrow">Saved Sarees</span>
+      <h2 id="wishlistTitle">Wishlist</h2>
+    </div>
+
+    <button
+      class="cart-close"
+      type="button"
+      onclick="closeWishlist()"
+      aria-label="Close wishlist"
+    >
+      ×
+    </button>
+  </div>
+
+  <div id="wishlistItems" class="cart-items wishlist-items"></div>
+
+  <div class="cart-summary">
+    <p class="cart-note">
+      Your wishlist is saved on this device.
+    </p>
+
+    <button
+      class="continue-shopping"
+      type="button"
+      onclick="closeWishlist()"
+    >
+      Continue Shopping
+    </button>
+  </div>
+</aside>
+
+
+<!-- PRODUCT DETAIL POPUP -->
+
+<div
+  id="productDetailOverlay"
+  class="product-detail-overlay"
+  onclick="closeProductDetail()"
+></div>
+
+<section
+  id="productDetailModal"
+  class="product-detail-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="productDetailTitle"
+  aria-hidden="true"
+>
+  <button
+    class="product-detail-close"
+    type="button"
+    onclick="closeProductDetail()"
+    aria-label="Close product details"
+  >
+    ×
+  </button>
+
+  <div id="productDetailContent"></div>
+</section>
 
 <script src="script.js"></script>
 
