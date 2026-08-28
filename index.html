@@ -41,8 +41,11 @@
     class="header-icon-button"
     id="searchButton"
     type="button"
-    aria-label="Search"
-    title="Search"
+    onclick="openHeaderSearch()"
+    aria-label="Search sarees"
+    aria-controls="headerSearchPanel"
+    aria-expanded="false"
+    title="Search sarees"
   >
     <svg viewBox="0 0 24 24">
       <circle cx="11" cy="11" r="7"></circle>
@@ -99,6 +102,58 @@
   </button>
 
 </div>
+  <div
+    id="headerSearchPanel"
+    class="header-search-panel"
+    aria-label="Search sarees"
+    hidden
+  >
+    <div class="header-search-heading">
+      <div>
+        <span class="eyebrow">Quick Search</span>
+        <h2>Find a saree</h2>
+      </div>
+
+      <button
+        type="button"
+        class="header-search-close"
+        onclick="closeHeaderSearch()"
+        aria-label="Close search"
+      >
+        ×
+      </button>
+    </div>
+
+    <form
+      class="header-search-form"
+      onsubmit="submitHeaderSearch(event)"
+    >
+      <label for="headerSearchInput">
+        Search by name, fabric, color or category
+      </label>
+
+      <div class="header-search-row">
+        <input
+          id="headerSearchInput"
+          type="search"
+          placeholder="Try “black silk” or “cotton”"
+          autocomplete="off"
+          oninput="renderHeaderSearchSuggestions(this.value)"
+        >
+
+        <button type="submit">
+          Search Sarees
+        </button>
+      </div>
+    </form>
+
+    <div
+      id="headerSearchSuggestions"
+      class="header-search-suggestions"
+      aria-live="polite"
+    ></div>
+  </div>
+
 </header>
 
 
