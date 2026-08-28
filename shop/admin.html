@@ -182,8 +182,20 @@ img.thumb{
     <option value="Georgette">Georgette</option>
     <option value="Handloom">Handloom</option>
     <option value="Designer">Designer Saree</option>
-    <option value="Other Sarees">Other Sarees</option>
+    <option value="Other">Other — type your own</option>
   </select>
+</div>
+
+<div id="customFabricWrap" class="hidden">
+  <label>Custom fabric / saree type *</label>
+  <input
+    id="customFabric"
+    maxlength="80"
+    placeholder="e.g. Kalamkari, Mangalagiri, Tussar"
+  >
+  <div class="muted">
+    This name will become its own saree category in the store.
+  </div>
 </div>
 
 <div>
@@ -282,6 +294,48 @@ let editing=null;
 let products=[];
 
 const $=id=>document.getElementById(id);
+
+const standardFabrics=[
+  'Cotton',
+  'Silk',
+  'Linen',
+  'Silk Cotton',
+  'Work Wear',
+  'Kanjivaram',
+  'Banarasi',
+  'Organza',
+  'Chiffon',
+  'Georgette',
+  'Handloom',
+  'Designer'
+];
+
+
+function updateCustomFabricField(clearIfHidden=false){
+
+  const isOther=
+    $('category').value==='Other';
+
+  $('customFabricWrap')
+    .classList.toggle(
+      'hidden',
+      !isOther
+    );
+
+  $('customFabric').required=
+    isOther;
+
+  if(!isOther && clearIfHidden){
+    $('customFabric').value='';
+  }
+
+}
+
+
+$('category').addEventListener(
+  'change',
+  ()=>updateCustomFabricField(true)
+);
 
 
 async function check(){
@@ -425,7 +479,29 @@ function edit(id){
   $('formTitle').textContent='Edit Product';
 
   $('name').value=p.name;
-  $('category').value=p.category;
+
+  const savedFabric=
+    String(p.category||'').trim();
+
+  if(standardFabrics.includes(savedFabric)){
+    $('category').value=savedFabric;
+    $('customFabric').value='';
+
+  }else if(
+    savedFabric &&
+    !['Sarees','New Arrivals','Collection']
+      .includes(savedFabric)
+  ){
+    $('category').value='Other';
+    $('customFabric').value=savedFabric;
+
+  }else{
+    $('category').value='';
+    $('customFabric').value='';
+  }
+
+  updateCustomFabricField();
+
   $('price').value=p.price;
   $('oldPrice').value=p.oldPrice||'';
   $('stock').value=p.stock;
@@ -508,8 +584,16 @@ async function saveProduct(){
   const productName =
     $('name').value.trim();
 
-  const selectedFabric =
+  const fabricChoice =
     $('category').value.trim();
+
+  const customFabric =
+    $('customFabric').value.trim();
+
+  const selectedFabric =
+    fabricChoice==='Other'
+      ? customFabric
+      : fabricChoice;
 
   if(!productName){
     $('msg').textContent =
@@ -520,8 +604,16 @@ async function saveProduct(){
 
   if(!selectedFabric){
     $('msg').textContent =
-      'Please choose the fabric.';
-    $('category').focus();
+      fabricChoice==='Other'
+        ? 'Please type the custom fabric or saree type.'
+        : 'Please choose the fabric.';
+
+    (
+      fabricChoice==='Other'
+        ? $('customFabric')
+        : $('category')
+    ).focus();
+
     return;
   }
 
@@ -702,7 +794,8 @@ function resetForm(){
     'sizes',
     'colors',
     'description',
-    'imageFile'
+    'imageFile',
+    'customFabric'
   ].forEach(id=>{
     $(id).value='';
   });
@@ -710,6 +803,7 @@ function resetForm(){
   $('stock').value=0;
 
   $('category').value='';
+  updateCustomFabricField();
 
   $('imagePreview').innerHTML='';
 
