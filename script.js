@@ -23,6 +23,18 @@ let cart = [];
 let wishlist = [];
 let activeSareeType = "";
 
+const productFilterState = {
+  search: "",
+  category: "all",
+  fabric: "all",
+  price: "all",
+  color: "all",
+  size: "all",
+  availability: "all",
+  discount: "all",
+  sort: "newest"
+};
+
 try {
   const savedWishlist =
     JSON.parse(
@@ -81,6 +93,7 @@ async function loadProducts() {
         : [];
 
     renderSareeCategories();
+    populateProductFilters();
     renderProducts();
     updateCartCount();
     renderCart();
@@ -490,6 +503,9 @@ function selectSareeCategory(typeId) {
   activeSareeType =
     category.id;
 
+  resetProductFilters(false);
+  populateProductFilters();
+
   document
     .querySelectorAll(
       ".saree-category-card"
@@ -588,6 +604,529 @@ function showSareeTypes() {
     });
 }
 
+// ==========================================
+// PRODUCT FILTERS
+// ==========================================
+
+function setFilterOptions(
+  selectId,
+  defaultLabel,
+  options,
+  selectedValue
+) {
+  const select =
+    document.getElementById(selectId);
+
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML = [
+    `<option value="all">${escapeHTML(defaultLabel)}</option>`,
+    ...options.map(option => `
+      <option value="${escapeAttribute(option.value)}">
+        ${escapeHTML(option.label)}
+      </option>
+    `)
+  ].join("");
+
+  select.value =
+    options.some(option =>
+      option.value === selectedValue
+    )
+      ? selectedValue
+      : "all";
+}
+
+function populateProductFilters() {
+  const categories =
+    Array.from(
+      new Set(
+        storeProducts
+          .map(product =>
+            String(
+              product.category || "Sarees"
+            ).trim()
+          )
+          .filter(Boolean)
+      )
+    )
+      .sort((a, b) =>
+        a.localeCompare(b)
+      )
+      .map(value => ({
+        value: value.toLowerCase(),
+        label: value
+      }));
+
+  const fabricMap =
+    new Map();
+
+  storeProducts.forEach(product => {
+    const definition =
+      getSareeTypeDefinition(product);
+
+    fabricMap.set(
+      definition.id,
+      definition.resultLabel
+    );
+  });
+
+  const fabrics =
+    Array.from(fabricMap.entries())
+      .map(([value, label]) => ({
+        value,
+        label
+      }))
+      .sort((a, b) =>
+        a.label.localeCompare(b.label)
+      );
+
+  const colors =
+    Array.from(
+      new Set(
+        storeProducts.flatMap(product =>
+          Array.isArray(product.colors)
+            ? product.colors
+                .map(color =>
+                  String(color).trim()
+                )
+                .filter(Boolean)
+            : []
+        )
+      )
+    )
+      .sort((a, b) =>
+        a.localeCompare(b)
+      )
+      .map(value => ({
+        value: value.toLowerCase(),
+        label: value
+      }));
+
+  const sizes =
+    Array.from(
+      new Set(
+        storeProducts.flatMap(product =>
+          Array.isArray(product.sizes)
+            ? product.sizes
+                .map(size =>
+                  String(size).trim()
+                )
+                .filter(Boolean)
+            : []
+        )
+      )
+    )
+      .sort((a, b) =>
+        a.localeCompare(b)
+      )
+      .map(value => ({
+        value: value.toLowerCase(),
+        label: value
+      }));
+
+  setFilterOptions(
+    "filterCategory",
+    "All Categories",
+    categories,
+    productFilterState.category
+  );
+
+  setFilterOptions(
+    "filterFabric",
+    "All Fabrics",
+    fabrics,
+    productFilterState.fabric
+  );
+
+  setFilterOptions(
+    "filterColor",
+    "All Colors",
+    colors,
+    productFilterState.color
+  );
+
+  setFilterOptions(
+    "filterSize",
+    "All Sizes",
+    sizes,
+    productFilterState.size
+  );
+}
+
+function readProductFilters() {
+  productFilterState.search =
+    document
+      .getElementById("filterSearch")
+      ?.value
+      .trim()
+      .toLowerCase() || "";
+
+  productFilterState.category =
+    document
+      .getElementById("filterCategory")
+      ?.value || "all";
+
+  productFilterState.fabric =
+    document
+      .getElementById("filterFabric")
+      ?.value || "all";
+
+  productFilterState.price =
+    document
+      .getElementById("filterPrice")
+      ?.value || "all";
+
+  productFilterState.color =
+    document
+      .getElementById("filterColor")
+      ?.value || "all";
+
+  productFilterState.size =
+    document
+      .getElementById("filterSize")
+      ?.value || "all";
+
+  productFilterState.availability =
+    document
+      .getElementById("filterAvailability")
+      ?.value || "all";
+
+  productFilterState.discount =
+    document
+      .getElementById("filterDiscount")
+      ?.value || "all";
+
+  productFilterState.sort =
+    document
+      .getElementById("filterSort")
+      ?.value || "newest";
+}
+
+function resetProductFilters(
+  shouldRender = true
+) {
+  Object.assign(
+    productFilterState,
+    {
+      search: "",
+      category: "all",
+      fabric: "all",
+      price: "all",
+      color: "all",
+      size: "all",
+      availability: "all",
+      discount: "all",
+      sort: "newest"
+    }
+  );
+
+  const search =
+    document.getElementById(
+      "filterSearch"
+    );
+
+  if (search) {
+    search.value = "";
+  }
+
+  [
+    "filterCategory",
+    "filterFabric",
+    "filterPrice",
+    "filterColor",
+    "filterSize",
+    "filterAvailability",
+    "filterDiscount",
+    "filterSort"
+  ].forEach(id => {
+    const control =
+      document.getElementById(id);
+
+    if (control) {
+      control.value =
+        id === "filterSort"
+          ? "newest"
+          : "all";
+    }
+  });
+
+  if (shouldRender) {
+    renderProducts();
+  }
+}
+
+function matchesPriceFilter(
+  product
+) {
+  const price =
+    Number(product.price || 0);
+
+  switch (
+    productFilterState.price
+  ) {
+    case "under-500":
+      return price < 500;
+
+    case "500-999":
+      return (
+        price >= 500 &&
+        price <= 999
+      );
+
+    case "1000-1999":
+      return (
+        price >= 1000 &&
+        price <= 1999
+      );
+
+    case "2000-4999":
+      return (
+        price >= 2000 &&
+        price <= 4999
+      );
+
+    case "5000-plus":
+      return price >= 5000;
+
+    default:
+      return true;
+  }
+}
+
+function productDiscountPercent(
+  product
+) {
+  const price =
+    Number(product.price || 0);
+
+  const oldPrice =
+    Number(
+      product.oldPrice ||
+      product.old_price ||
+      0
+    );
+
+  if (
+    oldPrice <= price ||
+    oldPrice <= 0
+  ) {
+    return 0;
+  }
+
+  return Math.round(
+    ((oldPrice - price) / oldPrice) *
+    100
+  );
+}
+
+function hasActiveProductFilters() {
+  return Boolean(
+    productFilterState.search ||
+    productFilterState.category !== "all" ||
+    productFilterState.fabric !== "all" ||
+    productFilterState.price !== "all" ||
+    productFilterState.color !== "all" ||
+    productFilterState.size !== "all" ||
+    productFilterState.availability !== "all" ||
+    productFilterState.discount !== "all"
+  );
+}
+
+function filteredStoreProducts() {
+  const products =
+    productsForActiveSareeType()
+      .filter(product => {
+        const searchable = [
+          product.name,
+          product.description,
+          product.category,
+          product.fabric,
+          product.occasion,
+          product.pattern,
+          product.border,
+          product.work,
+          product.blouse,
+          ...(Array.isArray(product.colors)
+            ? product.colors
+            : []),
+          ...(Array.isArray(product.sizes)
+            ? product.sizes
+            : []),
+          ...(Array.isArray(product.tags)
+            ? product.tags
+            : [])
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        const matchesSearch =
+          !productFilterState.search ||
+          searchable.includes(
+            productFilterState.search
+          );
+
+        const category =
+          String(
+            product.category || "Sarees"
+          )
+            .trim()
+            .toLowerCase();
+
+        const matchesCategory =
+          productFilterState.category ===
+            "all" ||
+          category ===
+            productFilterState.category;
+
+        const matchesFabric =
+          productFilterState.fabric ===
+            "all" ||
+          getSareeTypeDefinition(product)
+            .id ===
+            productFilterState.fabric;
+
+        const productColors =
+          Array.isArray(product.colors)
+            ? product.colors.map(color =>
+                String(color)
+                  .trim()
+                  .toLowerCase()
+              )
+            : [];
+
+        const matchesColor =
+          productFilterState.color ===
+            "all" ||
+          productColors.includes(
+            productFilterState.color
+          );
+
+        const productSizes =
+          Array.isArray(product.sizes)
+            ? product.sizes.map(size =>
+                String(size)
+                  .trim()
+                  .toLowerCase()
+              )
+            : [];
+
+        const matchesSize =
+          productFilterState.size ===
+            "all" ||
+          productSizes.includes(
+            productFilterState.size
+          );
+
+        const stock =
+          Number(product.stock || 0);
+
+        const matchesAvailability =
+          productFilterState.availability ===
+            "all" ||
+          (
+            productFilterState.availability ===
+              "in-stock"
+              ? stock > 0
+              : stock <= 0
+          );
+
+        const minimumDiscount =
+          productFilterState.discount ===
+            "all"
+            ? 0
+            : Number(
+                productFilterState.discount
+              );
+
+        const matchesDiscount =
+          !minimumDiscount ||
+          productDiscountPercent(product) >=
+            minimumDiscount;
+
+        return (
+          matchesSearch &&
+          matchesCategory &&
+          matchesFabric &&
+          matchesPriceFilter(product) &&
+          matchesColor &&
+          matchesSize &&
+          matchesAvailability &&
+          matchesDiscount
+        );
+      });
+
+  return products.sort((a, b) => {
+    switch (
+      productFilterState.sort
+    ) {
+      case "price-low":
+        return (
+          Number(a.price || 0) -
+          Number(b.price || 0)
+        );
+
+      case "price-high":
+        return (
+          Number(b.price || 0) -
+          Number(a.price || 0)
+        );
+
+      case "discount":
+        return (
+          productDiscountPercent(b) -
+          productDiscountPercent(a)
+        );
+
+      case "name":
+        return String(a.name || "")
+          .localeCompare(
+            String(b.name || "")
+          );
+
+      default:
+        return (
+          new Date(
+            b.createdAt ||
+            b.updatedAt ||
+            0
+          ).getTime() -
+          new Date(
+            a.createdAt ||
+            a.updatedAt ||
+            0
+          ).getTime()
+        );
+    }
+  });
+}
+
+function updateProductResultsCount(
+  count
+) {
+  const element =
+    document.getElementById(
+      "filterResultCount"
+    );
+
+  if (element) {
+    element.textContent =
+      `${count} ${
+        count === 1
+          ? "saree"
+          : "sarees"
+      } found`;
+  }
+}
+
+function applyProductFilters() {
+  readProductFilters();
+  renderProducts();
+}
+
+
 function productsForActiveSareeType() {
   if (
     !activeSareeType ||
@@ -615,28 +1154,52 @@ function renderProducts() {
   if (!grid) return;
 
   const visibleProducts =
-    productsForActiveSareeType();
+    filteredStoreProducts();
 
 
   if (!visibleProducts.length) {
+
+    updateProductResultsCount(0);
 
     grid.innerHTML = `
       <div class="empty-products">
 
         <h3>
-          New collection coming soon
+          ${hasActiveProductFilters()
+            ? "No sarees match these filters"
+            : "New collection coming soon"
+          }
         </h3>
 
         <p>
-          Beautiful MudduGumma sarees
-          will be available here soon.
+          ${hasActiveProductFilters()
+            ? "Try changing or clearing your filters."
+            : "Beautiful MudduGumma sarees will be available here soon."
+          }
         </p>
+
+        ${hasActiveProductFilters()
+          ? `
+            <button
+              type="button"
+              class="button primary"
+              onclick="resetProductFilters()"
+            >
+              Clear Filters
+            </button>
+          `
+          : ""
+        }
 
       </div>
     `;
 
     return;
   }
+
+  updateProductResultsCount(
+    visibleProducts.length
+  );
 
 
   grid.innerHTML =
@@ -2020,6 +2583,12 @@ window.goToCheckout =
 
 window.changeProductImage =
   changeProductImage;
+
+window.applyProductFilters =
+  applyProductFilters;
+
+window.resetProductFilters =
+  resetProductFilters;
 
 window.selectSareeCategory =
   selectSareeCategory;
