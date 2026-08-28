@@ -183,12 +183,43 @@
   </h2>
 
   <p class="lead">
-    Browse our newest arrivals. Products added from the MudduGumma
-    Admin panel automatically appear here.
+    Choose the saree style you love, then explore that collection.
+    New types added from the MudduGumma Admin panel appear automatically.
   </p>
 
-  <div id="productGrid" class="product-grid">
-    <p>Loading products...</p>
+  <div class="saree-type-heading">
+    <span class="eyebrow">Shop by Saree Type</span>
+    <p>Cotton, silk, linen and more — find your perfect drape quickly.</p>
+  </div>
+
+  <div
+    id="sareeCategoryGrid"
+    class="saree-category-grid"
+    aria-live="polite"
+  >
+    <p>Loading saree types...</p>
+  </div>
+
+  <div id="sareeResults" class="saree-results" hidden>
+    <div class="saree-results-heading">
+      <div>
+        <span class="eyebrow">Selected Collection</span>
+        <h3 id="sareeResultsTitle">Sarees</h3>
+        <p id="sareeResultsDescription"></p>
+      </div>
+
+      <button
+        type="button"
+        class="back-to-saree-types"
+        onclick="showSareeTypes()"
+      >
+        ← Browse Saree Types
+      </button>
+    </div>
+
+    <div id="productGrid" class="product-grid">
+      <p>Loading sarees...</p>
+    </div>
   </div>
 
 </section>
