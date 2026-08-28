@@ -25,14 +25,20 @@ let activeSareeType = "";
 
 const productFilterState = {
   search: "",
-  category: "all",
-  fabric: "all",
+  category: [],
+  fabric: [],
   price: "all",
-  color: "all",
-  size: "all",
+  color: [],
+  size: [],
+  occasion: [],
+  pattern: [],
+  work: [],
+  border: [],
+  blouse: [],
   availability: "all",
   discount: "all",
-  sort: "newest"
+  featuredOnly: false,
+  sort: "recommended"
 };
 
 try {
@@ -560,6 +566,16 @@ function selectSareeCategory(typeId) {
       category.subtitle;
   }
 
+  const breadcrumb =
+    document.getElementById(
+      "sareeBreadcrumbCurrent"
+    );
+
+  if (breadcrumb) {
+    breadcrumb.textContent =
+      category.resultLabel;
+  }
+
   renderProducts();
 
   requestAnimationFrame(() => {
@@ -572,6 +588,7 @@ function selectSareeCategory(typeId) {
 
 function showSareeTypes() {
   activeSareeType = "";
+  closeProductFilters();
 
   const results =
     document.getElementById(
@@ -882,56 +899,153 @@ function openHeaderSearchProduct(
 // PRODUCT FILTERS
 // ==========================================
 
-function setFilterOptions(
-  selectId,
-  defaultLabel,
-  options,
-  selectedValue
-) {
-  const select =
-    document.getElementById(selectId);
+const productFilterLabels = {
+  category: new Map(),
+  fabric: new Map(),
+  color: new Map(),
+  size: new Map(),
+  occasion: new Map(),
+  pattern: new Map(),
+  work: new Map(),
+  border: new Map(),
+  blouse: new Map()
+};
 
-  if (!select) {
+function productFilterOptionValues(
+  product,
+  field
+) {
+  const value =
+    product?.[field];
+
+  if (Array.isArray(value)) {
+    return value
+      .map(item =>
+        String(item).trim()
+      )
+      .filter(Boolean);
+  }
+
+  const cleanValue =
+    String(value || "").trim();
+
+  return cleanValue
+    ? [cleanValue]
+    : [];
+}
+
+function countedFilterOptions(
+  values
+) {
+  const optionMap =
+    new Map();
+
+  values
+    .filter(Boolean)
+    .forEach(rawValue => {
+      const label =
+        String(rawValue).trim();
+
+      const value =
+        label.toLowerCase();
+
+      if (!value) {
+        return;
+      }
+
+      const current =
+        optionMap.get(value);
+
+      optionMap.set(
+        value,
+        {
+          value,
+          label:
+            current?.label ||
+            label,
+          count:
+            (current?.count || 0) +
+            1
+        }
+      );
+    });
+
+  return Array
+    .from(optionMap.values())
+    .sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+}
+
+function setCheckboxFilterOptions(
+  containerId,
+  groupId,
+  inputName,
+  options,
+  selectedValues
+) {
+  const container =
+    document.getElementById(
+      containerId
+    );
+
+  const group =
+    document.getElementById(
+      groupId
+    );
+
+  if (!container) {
     return;
   }
 
-  select.innerHTML = [
-    `<option value="all">${escapeHTML(defaultLabel)}</option>`,
-    ...options.map(option => `
-      <option value="${escapeAttribute(option.value)}">
-        ${escapeHTML(option.label)}
-      </option>
-    `)
-  ].join("");
+  if (group) {
+    group.hidden =
+      !options.length;
+  }
 
-  select.value =
-    options.some(option =>
-      option.value === selectedValue
-    )
-      ? selectedValue
-      : "all";
+  const labelMap =
+    productFilterLabels[
+      inputName.replace("filter", "")
+        .toLowerCase()
+    ];
+
+  labelMap?.clear();
+
+  options.forEach(option => {
+    labelMap?.set(
+      option.value,
+      option.label
+    );
+  });
+
+  container.innerHTML =
+    options
+      .map(option => `
+        <label class="sidebar-filter-option">
+          <input
+            type="checkbox"
+            name="${escapeAttribute(inputName)}"
+            value="${escapeAttribute(option.value)}"
+            ${selectedValues.includes(option.value) ? "checked" : ""}
+            onchange="applyProductFilters()"
+          >
+          <span>${escapeHTML(option.label)}</span>
+          <small>${option.count}</small>
+        </label>
+      `)
+      .join("");
 }
 
 function populateProductFilters() {
   const categories =
-    Array.from(
-      new Set(
-        storeProducts
-          .map(product =>
-            String(
-              product.category || "Sarees"
-            ).trim()
-          )
-          .filter(Boolean)
+    countedFilterOptions(
+      storeProducts.map(product =>
+        String(
+          product.category ||
+          "Sarees"
+        ).trim()
       )
-    )
-      .sort((a, b) =>
-        a.localeCompare(b)
-      )
-      .map(value => ({
-        value: value.toLowerCase(),
-        label: value
-      }));
+    );
 
   const fabricMap =
     new Map();
@@ -940,93 +1054,191 @@ function populateProductFilters() {
     const definition =
       getSareeTypeDefinition(product);
 
+    const current =
+      fabricMap.get(definition.id);
+
     fabricMap.set(
       definition.id,
-      definition.resultLabel
+      {
+        value: definition.id,
+        label:
+          definition.resultLabel,
+        count:
+          (current?.count || 0) +
+          1
+      }
     );
   });
 
   const fabrics =
-    Array.from(fabricMap.entries())
-      .map(([value, label]) => ({
-        value,
-        label
-      }))
+    Array
+      .from(fabricMap.values())
       .sort((a, b) =>
         a.label.localeCompare(b.label)
       );
 
   const colors =
-    Array.from(
-      new Set(
-        storeProducts.flatMap(product =>
-          Array.isArray(product.colors)
-            ? product.colors
-                .map(color =>
-                  String(color).trim()
-                )
-                .filter(Boolean)
-            : []
+    countedFilterOptions(
+      storeProducts.flatMap(product =>
+        productFilterOptionValues(
+          product,
+          "colors"
         )
       )
-    )
-      .sort((a, b) =>
-        a.localeCompare(b)
-      )
-      .map(value => ({
-        value: value.toLowerCase(),
-        label: value
-      }));
+    );
 
   const sizes =
-    Array.from(
-      new Set(
-        storeProducts.flatMap(product =>
-          Array.isArray(product.sizes)
-            ? product.sizes
-                .map(size =>
-                  String(size).trim()
-                )
-                .filter(Boolean)
-            : []
+    countedFilterOptions(
+      storeProducts.flatMap(product =>
+        productFilterOptionValues(
+          product,
+          "sizes"
         )
       )
-    )
-      .sort((a, b) =>
-        a.localeCompare(b)
-      )
-      .map(value => ({
-        value: value.toLowerCase(),
-        label: value
-      }));
+    );
 
-  setFilterOptions(
+  const occasions =
+    countedFilterOptions(
+      storeProducts.flatMap(product =>
+        productFilterOptionValues(
+          product,
+          "occasion"
+        )
+      )
+    );
+
+  const patterns =
+    countedFilterOptions(
+      storeProducts.flatMap(product =>
+        productFilterOptionValues(
+          product,
+          "pattern"
+        )
+      )
+    );
+
+  const works =
+    countedFilterOptions(
+      storeProducts.flatMap(product =>
+        productFilterOptionValues(
+          product,
+          "work"
+        )
+      )
+    );
+
+  const borders =
+    countedFilterOptions(
+      storeProducts.flatMap(product =>
+        productFilterOptionValues(
+          product,
+          "border"
+        )
+      )
+    );
+
+  const blouses =
+    countedFilterOptions(
+      storeProducts.flatMap(product =>
+        productFilterOptionValues(
+          product,
+          "blouse"
+        )
+      )
+    );
+
+  setCheckboxFilterOptions(
+    "filterCategoryOptions",
+    "filterCategoryGroup",
     "filterCategory",
-    "All Categories",
     categories,
     productFilterState.category
   );
 
-  setFilterOptions(
+  setCheckboxFilterOptions(
+    "filterFabricOptions",
+    "filterFabricGroup",
     "filterFabric",
-    "All Fabrics",
     fabrics,
     productFilterState.fabric
   );
 
-  setFilterOptions(
+  setCheckboxFilterOptions(
+    "filterColorOptions",
+    "filterColorGroup",
     "filterColor",
-    "All Colors",
     colors,
     productFilterState.color
   );
 
-  setFilterOptions(
+  setCheckboxFilterOptions(
+    "filterSizeOptions",
+    "filterSizeGroup",
     "filterSize",
-    "All Sizes",
     sizes,
     productFilterState.size
   );
+
+  setCheckboxFilterOptions(
+    "filterOccasionOptions",
+    "filterOccasionGroup",
+    "filterOccasion",
+    occasions,
+    productFilterState.occasion
+  );
+
+  setCheckboxFilterOptions(
+    "filterPatternOptions",
+    "filterPatternGroup",
+    "filterPattern",
+    patterns,
+    productFilterState.pattern
+  );
+
+  setCheckboxFilterOptions(
+    "filterWorkOptions",
+    "filterWorkGroup",
+    "filterWork",
+    works,
+    productFilterState.work
+  );
+
+  setCheckboxFilterOptions(
+    "filterBorderOptions",
+    "filterBorderGroup",
+    "filterBorder",
+    borders,
+    productFilterState.border
+  );
+
+  setCheckboxFilterOptions(
+    "filterBlouseOptions",
+    "filterBlouseGroup",
+    "filterBlouse",
+    blouses,
+    productFilterState.blouse
+  );
+}
+
+function checkedFilterValues(
+  inputName
+) {
+  return Array.from(
+    document.querySelectorAll(
+      `input[name="${inputName}"]:checked`
+    )
+  ).map(input =>
+    input.value
+  );
+}
+
+function selectedRadioValue(
+  inputName,
+  fallback = "all"
+) {
+  return document.querySelector(
+    `input[name="${inputName}"]:checked`
+  )?.value || fallback;
 }
 
 function readProductFilters() {
@@ -1038,44 +1250,144 @@ function readProductFilters() {
       .toLowerCase() || "";
 
   productFilterState.category =
-    document
-      .getElementById("filterCategory")
-      ?.value || "all";
+    checkedFilterValues(
+      "filterCategory"
+    );
 
   productFilterState.fabric =
-    document
-      .getElementById("filterFabric")
-      ?.value || "all";
-
-  productFilterState.price =
-    document
-      .getElementById("filterPrice")
-      ?.value || "all";
+    checkedFilterValues(
+      "filterFabric"
+    );
 
   productFilterState.color =
-    document
-      .getElementById("filterColor")
-      ?.value || "all";
+    checkedFilterValues(
+      "filterColor"
+    );
 
   productFilterState.size =
-    document
-      .getElementById("filterSize")
-      ?.value || "all";
+    checkedFilterValues(
+      "filterSize"
+    );
+
+  productFilterState.occasion =
+    checkedFilterValues(
+      "filterOccasion"
+    );
+
+  productFilterState.pattern =
+    checkedFilterValues(
+      "filterPattern"
+    );
+
+  productFilterState.work =
+    checkedFilterValues(
+      "filterWork"
+    );
+
+  productFilterState.border =
+    checkedFilterValues(
+      "filterBorder"
+    );
+
+  productFilterState.blouse =
+    checkedFilterValues(
+      "filterBlouse"
+    );
+
+  productFilterState.price =
+    selectedRadioValue(
+      "filterPrice"
+    );
 
   productFilterState.availability =
-    document
-      .getElementById("filterAvailability")
-      ?.value || "all";
+    selectedRadioValue(
+      "filterAvailability"
+    );
 
   productFilterState.discount =
-    document
-      .getElementById("filterDiscount")
-      ?.value || "all";
+    selectedRadioValue(
+      "filterDiscount"
+    );
 
   productFilterState.sort =
     document
       .getElementById("filterSort")
-      ?.value || "newest";
+      ?.value || "recommended";
+}
+
+function syncProductFilterControls() {
+  const arrayGroups = [
+    ["filterCategory", "category"],
+    ["filterFabric", "fabric"],
+    ["filterColor", "color"],
+    ["filterSize", "size"],
+    ["filterOccasion", "occasion"],
+    ["filterPattern", "pattern"],
+    ["filterWork", "work"],
+    ["filterBorder", "border"],
+    ["filterBlouse", "blouse"]
+  ];
+
+  arrayGroups.forEach(
+    ([inputName, stateKey]) => {
+      document
+        .querySelectorAll(
+          `input[name="${inputName}"]`
+        )
+        .forEach(input => {
+          input.checked =
+            productFilterState[
+              stateKey
+            ].includes(
+              input.value
+            );
+        });
+    }
+  );
+
+  [
+    ["filterPrice", productFilterState.price],
+    [
+      "filterAvailability",
+      productFilterState.availability
+    ],
+    [
+      "filterDiscount",
+      productFilterState.discount
+    ]
+  ].forEach(([inputName, value]) => {
+    const input =
+      document.querySelector(
+        `input[name="${inputName}"][value="${value}"]`
+      ) ||
+      document.querySelector(
+        `input[name="${inputName}"][value="all"]`
+      );
+
+    if (input) {
+      input.checked = true;
+    }
+  });
+
+  const sort =
+    document.getElementById(
+      "filterSort"
+    );
+
+  if (sort) {
+    sort.value =
+      productFilterState.sort;
+  }
+
+  const search =
+    document.getElementById(
+      "filterSearch"
+    );
+
+  if (search) {
+    search.value =
+      productFilterState.search;
+  }
 }
 
 function resetProductFilters(
@@ -1085,46 +1397,34 @@ function resetProductFilters(
     productFilterState,
     {
       search: "",
-      category: "all",
-      fabric: "all",
+      category: [],
+      fabric: [],
       price: "all",
-      color: "all",
-      size: "all",
+      color: [],
+      size: [],
+      occasion: [],
+      pattern: [],
+      work: [],
+      border: [],
+      blouse: [],
       availability: "all",
       discount: "all",
-      sort: "newest"
+      featuredOnly: false,
+      sort: "recommended"
     }
   );
 
-  const search =
+  const headerSearch =
     document.getElementById(
-      "filterSearch"
+      "headerSearchInput"
     );
 
-  if (search) {
-    search.value = "";
+  if (headerSearch) {
+    headerSearch.value = "";
   }
 
-  [
-    "filterCategory",
-    "filterFabric",
-    "filterPrice",
-    "filterColor",
-    "filterSize",
-    "filterAvailability",
-    "filterDiscount",
-    "filterSort"
-  ].forEach(id => {
-    const control =
-      document.getElementById(id);
-
-    if (control) {
-      control.value =
-        id === "filterSort"
-          ? "newest"
-          : "all";
-    }
-  });
+  syncProductFilterControls();
+  renderActiveProductFilters();
 
   if (shouldRender) {
     renderProducts();
@@ -1142,6 +1442,9 @@ function matchesPriceFilter(
   ) {
     case "under-500":
       return price < 500;
+
+    case "under-1000":
+      return price < 1000;
 
     case "500-999":
       return (
@@ -1195,16 +1498,61 @@ function productDiscountPercent(
   );
 }
 
+function matchesSelectedValues(
+  selectedValues,
+  productValues
+) {
+  if (!selectedValues.length) {
+    return true;
+  }
+
+  const normalizedValues =
+    productValues.map(value =>
+      String(value)
+        .trim()
+        .toLowerCase()
+    );
+
+  return selectedValues.some(value =>
+    normalizedValues.includes(value)
+  );
+}
+
 function hasActiveProductFilters() {
   return Boolean(
     productFilterState.search ||
-    productFilterState.category !== "all" ||
-    productFilterState.fabric !== "all" ||
+    productFilterState.category.length ||
+    productFilterState.fabric.length ||
     productFilterState.price !== "all" ||
-    productFilterState.color !== "all" ||
-    productFilterState.size !== "all" ||
+    productFilterState.color.length ||
+    productFilterState.size.length ||
+    productFilterState.occasion.length ||
+    productFilterState.pattern.length ||
+    productFilterState.work.length ||
+    productFilterState.border.length ||
+    productFilterState.blouse.length ||
     productFilterState.availability !== "all" ||
-    productFilterState.discount !== "all"
+    productFilterState.discount !== "all" ||
+    productFilterState.featuredOnly
+  );
+}
+
+function productRecommendedScore(
+  product
+) {
+  return (
+    (product.featured ? 1000000 : 0) +
+    (Number(product.stock || 0) > 0
+      ? 100000
+      : 0) +
+    Math.max(
+      0,
+      new Date(
+        product.createdAt ||
+        product.updatedAt ||
+        0
+      ).getTime() / 100000000
+    )
   );
 }
 
@@ -1242,56 +1590,83 @@ function filteredStoreProducts() {
             productFilterState.search
           );
 
-        const category =
-          String(
-            product.category || "Sarees"
-          )
-            .trim()
-            .toLowerCase();
-
         const matchesCategory =
-          productFilterState.category ===
-            "all" ||
-          category ===
-            productFilterState.category;
-
-        const matchesFabric =
-          productFilterState.fabric ===
-            "all" ||
-          getSareeTypeDefinition(product)
-            .id ===
-            productFilterState.fabric;
-
-        const productColors =
-          Array.isArray(product.colors)
-            ? product.colors.map(color =>
-                String(color)
-                  .trim()
-                  .toLowerCase()
-              )
-            : [];
-
-        const matchesColor =
-          productFilterState.color ===
-            "all" ||
-          productColors.includes(
-            productFilterState.color
+          matchesSelectedValues(
+            productFilterState.category,
+            [
+              product.category ||
+              "Sarees"
+            ]
           );
 
-        const productSizes =
-          Array.isArray(product.sizes)
-            ? product.sizes.map(size =>
-                String(size)
-                  .trim()
-                  .toLowerCase()
-              )
-            : [];
+        const matchesFabric =
+          !productFilterState.fabric.length ||
+          productFilterState.fabric.includes(
+            getSareeTypeDefinition(product)
+              .id
+          );
+
+        const matchesColor =
+          matchesSelectedValues(
+            productFilterState.color,
+            productFilterOptionValues(
+              product,
+              "colors"
+            )
+          );
 
         const matchesSize =
-          productFilterState.size ===
-            "all" ||
-          productSizes.includes(
-            productFilterState.size
+          matchesSelectedValues(
+            productFilterState.size,
+            productFilterOptionValues(
+              product,
+              "sizes"
+            )
+          );
+
+        const matchesOccasion =
+          matchesSelectedValues(
+            productFilterState.occasion,
+            productFilterOptionValues(
+              product,
+              "occasion"
+            )
+          );
+
+        const matchesPattern =
+          matchesSelectedValues(
+            productFilterState.pattern,
+            productFilterOptionValues(
+              product,
+              "pattern"
+            )
+          );
+
+        const matchesWork =
+          matchesSelectedValues(
+            productFilterState.work,
+            productFilterOptionValues(
+              product,
+              "work"
+            )
+          );
+
+        const matchesBorder =
+          matchesSelectedValues(
+            productFilterState.border,
+            productFilterOptionValues(
+              product,
+              "border"
+            )
+          );
+
+        const matchesBlouse =
+          matchesSelectedValues(
+            productFilterState.blouse,
+            productFilterOptionValues(
+              product,
+              "blouse"
+            )
           );
 
         const stock =
@@ -1320,6 +1695,10 @@ function filteredStoreProducts() {
           productDiscountPercent(product) >=
             minimumDiscount;
 
+        const matchesFeatured =
+          !productFilterState.featuredOnly ||
+          Boolean(product.featured);
+
         return (
           matchesSearch &&
           matchesCategory &&
@@ -1327,8 +1706,14 @@ function filteredStoreProducts() {
           matchesPriceFilter(product) &&
           matchesColor &&
           matchesSize &&
+          matchesOccasion &&
+          matchesPattern &&
+          matchesWork &&
+          matchesBorder &&
+          matchesBlouse &&
           matchesAvailability &&
-          matchesDiscount
+          matchesDiscount &&
+          matchesFeatured
         );
       });
 
@@ -1336,6 +1721,20 @@ function filteredStoreProducts() {
     switch (
       productFilterState.sort
     ) {
+      case "newest":
+        return (
+          new Date(
+            b.createdAt ||
+            b.updatedAt ||
+            0
+          ).getTime() -
+          new Date(
+            a.createdAt ||
+            a.updatedAt ||
+            0
+          ).getTime()
+        );
+
       case "price-low":
         return (
           Number(a.price || 0) -
@@ -1362,19 +1761,325 @@ function filteredStoreProducts() {
 
       default:
         return (
-          new Date(
-            b.createdAt ||
-            b.updatedAt ||
-            0
-          ).getTime() -
-          new Date(
-            a.createdAt ||
-            a.updatedAt ||
-            0
-          ).getTime()
+          productRecommendedScore(b) -
+          productRecommendedScore(a)
         );
     }
   });
+}
+
+function filterLabel(
+  group,
+  value
+) {
+  const staticLabels = {
+    price: {
+      "under-500": "Under ₹500",
+      "under-1000": "Under ₹999",
+      "500-999": "₹500–₹999",
+      "1000-1999": "₹1,000–₹1,999",
+      "2000-4999": "₹2,000–₹4,999",
+      "5000-plus": "₹5,000+"
+    },
+    availability: {
+      "in-stock": "In Stock",
+      "out-of-stock": "Out of Stock"
+    },
+    discount: {
+      "10": "10%+ Discount",
+      "20": "20%+ Discount",
+      "30": "30%+ Discount",
+      "50": "50%+ Discount"
+    }
+  };
+
+  return (
+    productFilterLabels[
+      group
+    ]?.get(value) ||
+    staticLabels[group]?.[value] ||
+    value
+  );
+}
+
+function activeProductFilterEntries() {
+  const entries = [];
+
+  if (productFilterState.search) {
+    entries.push({
+      group: "search",
+      value:
+        productFilterState.search,
+      label:
+        `Search: ${productFilterState.search}`
+    });
+  }
+
+  [
+    "category",
+    "fabric",
+    "color",
+    "size",
+    "occasion",
+    "pattern",
+    "work",
+    "border",
+    "blouse"
+  ].forEach(group => {
+    productFilterState[group]
+      .forEach(value => {
+        entries.push({
+          group,
+          value,
+          label:
+            filterLabel(
+              group,
+              value
+            )
+        });
+      });
+  });
+
+  [
+    "price",
+    "availability",
+    "discount"
+  ].forEach(group => {
+    const value =
+      productFilterState[group];
+
+    if (value !== "all") {
+      entries.push({
+        group,
+        value,
+        label:
+          filterLabel(
+            group,
+            value
+          )
+      });
+    }
+  });
+
+  if (
+    productFilterState.featuredOnly
+  ) {
+    entries.push({
+      group: "featuredOnly",
+      value: "true",
+      label: "Recommended"
+    });
+  }
+
+  return entries;
+}
+
+function renderActiveProductFilters() {
+  const container =
+    document.getElementById(
+      "activeFilterChips"
+    );
+
+  const entries =
+    activeProductFilterEntries();
+
+  if (container) {
+    container.innerHTML =
+      entries.length
+        ? `
+          ${entries.map(entry => `
+            <button
+              type="button"
+              data-filter-group="${escapeAttribute(entry.group)}"
+              data-filter-value="${escapeAttribute(entry.value)}"
+              onclick="removeProductFilter(this.dataset.filterGroup,this.dataset.filterValue)"
+            >
+              ${escapeHTML(entry.label)}
+              <span aria-hidden="true">×</span>
+            </button>
+          `).join("")}
+
+          <button
+            type="button"
+            class="clear-active-filters"
+            onclick="resetProductFilters()"
+          >
+            Clear All
+          </button>
+        `
+        : "";
+  }
+
+  const count =
+    document.getElementById(
+      "mobileFilterCount"
+    );
+
+  if (count) {
+    count.textContent =
+      entries.length;
+
+    count.hidden =
+      !entries.length;
+  }
+
+  document
+    .querySelectorAll(
+      "[data-quick-filter]"
+    )
+    .forEach(button => {
+      const quick =
+        button.dataset.quickFilter;
+
+      const pressed =
+        (
+          quick === "newest" &&
+          productFilterState.sort ===
+            "newest"
+        ) ||
+        (
+          quick === "featured" &&
+          productFilterState.featuredOnly
+        ) ||
+        (
+          quick === "silk" &&
+          productFilterState.fabric
+            .includes("silk")
+        ) ||
+        (
+          quick === "cotton" &&
+          productFilterState.fabric
+            .includes("cotton")
+        ) ||
+        (
+          quick === "in-stock" &&
+          productFilterState.availability ===
+            "in-stock"
+        ) ||
+        (
+          quick === "under-999" &&
+          productFilterState.price ===
+            "under-1000"
+        );
+
+      button.setAttribute(
+        "aria-pressed",
+        pressed ? "true" : "false"
+      );
+    });
+}
+
+function removeProductFilter(
+  group,
+  value
+) {
+  if (
+    Array.isArray(
+      productFilterState[group]
+    )
+  ) {
+    productFilterState[group] =
+      productFilterState[group]
+        .filter(item =>
+          item !== value
+        );
+
+  } else if (
+    group === "search"
+  ) {
+    productFilterState.search = "";
+
+    const headerSearch =
+      document.getElementById(
+        "headerSearchInput"
+      );
+
+    if (headerSearch) {
+      headerSearch.value = "";
+    }
+
+  } else if (
+    group === "featuredOnly"
+  ) {
+    productFilterState.featuredOnly =
+      false;
+
+  } else if (
+    Object.prototype.hasOwnProperty.call(
+      productFilterState,
+      group
+    )
+  ) {
+    productFilterState[group] =
+      "all";
+  }
+
+  syncProductFilterControls();
+  renderProducts();
+}
+
+function applyQuickProductFilter(
+  type,
+  value
+) {
+  if (type === "newest") {
+    productFilterState.sort =
+      productFilterState.sort ===
+        "newest"
+        ? "recommended"
+        : "newest";
+
+  } else if (type === "featured") {
+    productFilterState.featuredOnly =
+      !productFilterState.featuredOnly;
+
+  } else if (type === "fabric") {
+    const exists =
+      productFilterState.fabric
+        .includes(value);
+
+    productFilterState.fabric =
+      exists
+        ? productFilterState.fabric
+            .filter(item =>
+              item !== value
+            )
+        : [
+            ...productFilterState.fabric,
+            value
+          ];
+
+  } else if (
+    type === "availability"
+  ) {
+    productFilterState.availability =
+      productFilterState.availability ===
+        value
+        ? "all"
+        : value;
+
+  } else if (type === "price") {
+    productFilterState.price =
+      productFilterState.price ===
+        value
+        ? "all"
+        : value;
+  }
+
+  syncProductFilterControls();
+  renderProducts();
+}
+
+function openProductFilters() {
+  document.body.classList.add(
+    "product-filters-open"
+  );
+}
+
+function closeProductFilters() {
+  document.body.classList.remove(
+    "product-filters-open"
+  );
 }
 
 function updateProductResultsCount(
@@ -1429,6 +2134,8 @@ function renderProducts() {
 
   const visibleProducts =
     filteredStoreProducts();
+
+  renderActiveProductFilters();
 
 
   if (!visibleProducts.length) {
@@ -1936,6 +2643,18 @@ function openProductDetail(productId) {
   const sizes = Array.isArray(product.sizes)
     ? product.sizes
     : [];
+
+  const detailSpecs = [
+    ["Fabric", product.fabric],
+    ["Occasion", product.occasion],
+    ["Pattern", product.pattern],
+    ["Work", product.work],
+    ["Border", product.border],
+    ["Blouse Piece", product.blouse]
+  ].filter(([, value]) =>
+    String(value || "").trim()
+  );
+
   const wished = isWishlisted(product.id);
   const productIdValue = escapeAttribute(product.id);
 
@@ -2006,6 +2725,20 @@ function openProductDetail(productId) {
         <div class="product-detail-stock ${stock > 0 ? "available" : "sold"}">
           ${stock > 0 ? "In Stock" : "Out of Stock"}
         </div>
+
+        ${detailSpecs.length
+          ? `
+            <div class="product-detail-spec-grid">
+              ${detailSpecs.map(([label, value]) => `
+                <div>
+                  <b>${escapeHTML(label)}</b>
+                  <span>${escapeHTML(value)}</span>
+                </div>
+              `).join("")}
+            </div>
+          `
+          : ""
+        }
 
         ${colors.length
           ? `
@@ -2872,6 +3605,18 @@ window.renderHeaderSearchSuggestions =
 
 window.openHeaderSearchProduct =
   openHeaderSearchProduct;
+
+window.applyQuickProductFilter =
+  applyQuickProductFilter;
+
+window.removeProductFilter =
+  removeProductFilter;
+
+window.openProductFilters =
+  openProductFilters;
+
+window.closeProductFilters =
+  closeProductFilters;
 
 window.applyProductFilters =
   applyProductFilters;
