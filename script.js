@@ -21,6 +21,7 @@ if (yearElement) {
 let storeProducts = [];
 let cart = [];
 let wishlist = [];
+let activeSareeType = "";
 
 try {
   const savedWishlist =
@@ -79,6 +80,7 @@ async function loadProducts() {
         ? products
         : [];
 
+    renderSareeCategories();
     renderProducts();
     updateCartCount();
     renderCart();
@@ -115,6 +117,463 @@ async function loadProducts() {
 
 
 // ==========================================
+// SHOP BY SAREE TYPE
+// ==========================================
+
+const sareeTypeDefinitions = [
+  {
+    "id": "silk-cotton",
+    "label": "Silk Cottons",
+    "resultLabel": "Silk Cotton Sarees",
+    "subtitle": "Everyday grace",
+    "keywords": [
+      "silk cotton",
+      "cotton silk"
+    ]
+  },
+  {
+    "id": "cotton",
+    "label": "Cottons",
+    "resultLabel": "Cotton Sarees",
+    "subtitle": "Light and easy",
+    "keywords": [
+      "cotton"
+    ]
+  },
+  {
+    "id": "work-wear",
+    "label": "Work Wear",
+    "resultLabel": "Work Wear Sarees",
+    "subtitle": "Casual collections",
+    "keywords": [
+      "work wear",
+      "workwear",
+      "office wear",
+      "office saree",
+      "daily wear",
+      "casual saree"
+    ]
+  },
+  {
+    "id": "linen",
+    "label": "Linens",
+    "resultLabel": "Linen Sarees",
+    "subtitle": "Soft modern drapes",
+    "keywords": [
+      "linen",
+      "lenin"
+    ]
+  },
+  {
+    "id": "kanjivaram",
+    "label": "Kanjivaram",
+    "resultLabel": "Kanjivaram Sarees",
+    "subtitle": "Rich traditional beauty",
+    "keywords": [
+      "kanjivaram",
+      "kanjeevaram",
+      "kanchipuram"
+    ]
+  },
+  {
+    "id": "banarasi",
+    "label": "Banarasi",
+    "resultLabel": "Banarasi Sarees",
+    "subtitle": "Heritage elegance",
+    "keywords": [
+      "banarasi",
+      "banaras"
+    ]
+  },
+  {
+    "id": "organza",
+    "label": "Organza",
+    "resultLabel": "Organza Sarees",
+    "subtitle": "Light festive style",
+    "keywords": [
+      "organza"
+    ]
+  },
+  {
+    "id": "chiffon",
+    "label": "Chiffon",
+    "resultLabel": "Chiffon Sarees",
+    "subtitle": "Flowing and graceful",
+    "keywords": [
+      "chiffon"
+    ]
+  },
+  {
+    "id": "georgette",
+    "label": "Georgette",
+    "resultLabel": "Georgette Sarees",
+    "subtitle": "Easy elegant drapes",
+    "keywords": [
+      "georgette"
+    ]
+  },
+  {
+    "id": "handloom",
+    "label": "Handlooms",
+    "resultLabel": "Handloom Sarees",
+    "subtitle": "Crafted with tradition",
+    "keywords": [
+      "handloom",
+      "hand woven",
+      "handwoven"
+    ]
+  },
+  {
+    "id": "designer",
+    "label": "Designer Sarees",
+    "resultLabel": "Designer Sarees",
+    "subtitle": "Statement collections",
+    "keywords": [
+      "designer"
+    ]
+  },
+  {
+    "id": "silk",
+    "label": "Silks",
+    "resultLabel": "Silk Sarees",
+    "subtitle": "Timeless elegance",
+    "keywords": [
+      "silk",
+      "pattu"
+    ]
+  }
+];
+
+function productSareeSearchText(product) {
+  const tags = Array.isArray(product?.tags)
+    ? product.tags
+    : [];
+
+  return [
+    product?.category,
+    product?.type,
+    product?.fabric,
+    product?.name,
+    product?.description,
+    ...tags
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .replace(/[-_]/g, " ");
+}
+
+function getSareeTypeDefinition(product) {
+  const searchText =
+    productSareeSearchText(product);
+
+  const knownType =
+    sareeTypeDefinitions.find(definition =>
+      definition.keywords.some(keyword =>
+        searchText.includes(keyword)
+      )
+    );
+
+  if (knownType) {
+    return knownType;
+  }
+
+  const rawCategory =
+    String(product?.category || "").trim();
+
+  if (
+    rawCategory &&
+    !/^(saree|sarees|women'?s wear|collection)$/i
+      .test(rawCategory)
+  ) {
+    const cleanLabel =
+      rawCategory
+        .replace(/\bsarees?\b/gi, "")
+        .trim();
+
+    const label =
+      cleanLabel || "Other Sarees";
+
+    return {
+      id: `category-${label
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")}`,
+      label,
+      resultLabel: `${label} Sarees`,
+      subtitle: "Explore the collection",
+      keywords: []
+    };
+  }
+
+  return {
+    id: "other-sarees",
+    label: "Other Sarees",
+    resultLabel: "Other Sarees",
+    subtitle: "More beautiful choices",
+    keywords: []
+  };
+}
+
+function getSareeCategories() {
+  const categoryMap =
+    new Map();
+
+  storeProducts.forEach(product => {
+    const definition =
+      getSareeTypeDefinition(product);
+
+    if (!categoryMap.has(definition.id)) {
+      categoryMap.set(
+        definition.id,
+        {
+          ...definition,
+          products: []
+        }
+      );
+    }
+
+    categoryMap
+      .get(definition.id)
+      .products
+      .push(product);
+  });
+
+  return Array.from(categoryMap.values());
+}
+
+function renderSareeCategories() {
+  const container =
+    document.getElementById(
+      "sareeCategoryGrid"
+    );
+
+  const results =
+    document.getElementById(
+      "sareeResults"
+    );
+
+  if (!container) {
+    return;
+  }
+
+  if (!storeProducts.length) {
+    container.innerHTML = `
+      <div class="empty-saree-types">
+        <h3>New saree types coming soon</h3>
+        <p>
+          Cotton, silk, linen and more beautiful
+          collections will appear here.
+        </p>
+      </div>
+    `;
+
+    if (results) {
+      results.hidden = true;
+    }
+
+    return;
+  }
+
+  const categories =
+    getSareeCategories();
+
+  const allCategory = {
+    id: "all",
+    label: "All Sarees",
+    resultLabel: "All Sarees",
+    subtitle: "See every collection",
+    products: storeProducts
+  };
+
+  container.innerHTML = [
+    ...categories,
+    allCategory
+  ]
+    .map(category => {
+      const previewProduct =
+        category.products[0];
+
+      const previewImage =
+        productImages(previewProduct)[0] || "";
+
+      const selected =
+        activeSareeType === category.id;
+
+      return `
+        <article class="saree-category-card${selected ? " selected" : ""}">
+          <button
+            type="button"
+            data-saree-type="${escapeAttribute(category.id)}"
+            onclick="selectSareeCategory(this.dataset.sareeType)"
+            aria-pressed="${selected ? "true" : "false"}"
+          >
+            ${
+              previewImage
+                ? `
+                  <img
+                    src="${escapeAttribute(previewImage)}"
+                    alt="${escapeHTML(category.label)}"
+                    loading="lazy"
+                  >
+                `
+                : `
+                  <span class="saree-category-placeholder">
+                    MudduGumma
+                  </span>
+                `
+            }
+
+            <span class="saree-category-copy">
+              <strong>${escapeHTML(category.label)}</strong>
+              <small>${escapeHTML(category.subtitle)}</small>
+              <span class="saree-category-explore">
+                Explore <b aria-hidden="true">→</b>
+              </span>
+            </span>
+          </button>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function selectSareeCategory(typeId) {
+  const categories =
+    getSareeCategories();
+
+  const category =
+    typeId === "all"
+      ? {
+          id: "all",
+          resultLabel: "All Sarees",
+          subtitle: "Browse every MudduGumma collection."
+        }
+      : categories.find(item =>
+          item.id === typeId
+        );
+
+  if (!category) {
+    return;
+  }
+
+  activeSareeType =
+    category.id;
+
+  document
+    .querySelectorAll(
+      ".saree-category-card"
+    )
+    .forEach(card => {
+      const button =
+        card.querySelector(
+          "[data-saree-type]"
+        );
+
+      const selected =
+        button?.dataset.sareeType ===
+        activeSareeType;
+
+      card.classList.toggle(
+        "selected",
+        selected
+      );
+
+      button?.setAttribute(
+        "aria-pressed",
+        selected ? "true" : "false"
+      );
+    });
+
+  const results =
+    document.getElementById(
+      "sareeResults"
+    );
+
+  const title =
+    document.getElementById(
+      "sareeResultsTitle"
+    );
+
+  const description =
+    document.getElementById(
+      "sareeResultsDescription"
+    );
+
+  if (results) {
+    results.hidden = false;
+  }
+
+  if (title) {
+    title.textContent =
+      category.resultLabel;
+  }
+
+  if (description) {
+    description.textContent =
+      category.subtitle;
+  }
+
+  renderProducts();
+
+  requestAnimationFrame(() => {
+    results?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  });
+}
+
+function showSareeTypes() {
+  activeSareeType = "";
+
+  const results =
+    document.getElementById(
+      "sareeResults"
+    );
+
+  if (results) {
+    results.hidden = true;
+  }
+
+  document
+    .querySelectorAll(
+      ".saree-category-card"
+    )
+    .forEach(card => {
+      card.classList.remove("selected");
+      card
+        .querySelector("[data-saree-type]")
+        ?.setAttribute(
+          "aria-pressed",
+          "false"
+        );
+    });
+
+  document
+    .getElementById("sareeCategoryGrid")
+    ?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+}
+
+function productsForActiveSareeType() {
+  if (
+    !activeSareeType ||
+    activeSareeType === "all"
+  ) {
+    return storeProducts;
+  }
+
+  return storeProducts.filter(product =>
+    getSareeTypeDefinition(product).id ===
+    activeSareeType
+  );
+}
+
+
+// ==========================================
 // SHOW PRODUCTS
 // ==========================================
 
@@ -125,8 +584,11 @@ function renderProducts() {
 
   if (!grid) return;
 
+  const visibleProducts =
+    productsForActiveSareeType();
 
-  if (!storeProducts.length) {
+
+  if (!visibleProducts.length) {
 
     grid.innerHTML = `
       <div class="empty-products">
@@ -148,7 +610,7 @@ function renderProducts() {
 
 
   grid.innerHTML =
-    storeProducts
+    visibleProducts
       .map(product => {
 
         const images =
@@ -1528,6 +1990,12 @@ window.goToCheckout =
 
 window.changeProductImage =
   changeProductImage;
+
+window.selectSareeCategory =
+  selectSareeCategory;
+
+window.showSareeTypes =
+  showSareeTypes;
 
 window.openWishlist =
   openWishlist;
