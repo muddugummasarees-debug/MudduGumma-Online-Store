@@ -4,6 +4,8 @@ const CUSTOMER_COOKIE_NAME = "mg_customer";
 const CUSTOMER_SESSION_SECONDS = 30 * 24 * 60 * 60;
 const PASSWORD_ITERATIONS = 100000;
 
+let productMetadataReady = false;
+
 export default {
   async fetch(request, env) {
     try {
@@ -660,12 +662,23 @@ export default {
         path === "/api/products" &&
         request.method === "GET"
       ) {
+        await ensureProductMetadataColumns(
+          env
+        );
+
         const result =
           await env.DB.prepare(`
             SELECT
               id,
               name,
               category,
+              department,
+              occasion,
+              pattern,
+              border_type,
+              work_type,
+              blouse_piece,
+              featured,
               price,
               old_price,
               stock,
@@ -710,6 +723,10 @@ export default {
           );
         }
 
+        await ensureProductMetadataColumns(
+          env
+        );
+
         const body =
           await readJson(request);
 
@@ -737,6 +754,31 @@ export default {
               ? [String(body.image)]
               : [];
 
+        const requestedFabric =
+          cleanText(
+            body.fabric,
+            150
+          );
+
+        const legacyCategory =
+          cleanText(
+            body.category,
+            150
+          );
+
+        const department =
+          requestedFabric
+            ? (
+                legacyCategory ||
+                "Sarees"
+              )
+            : "Sarees";
+
+        const fabric =
+          requestedFabric ||
+          legacyCategory ||
+          "Other Sarees";
+
         const product = {
           id:
             cleanText(
@@ -752,11 +794,44 @@ export default {
             ),
 
           category:
+            department,
+
+          fabric,
+
+          occasion:
             cleanText(
-              body.category,
-              150
-            ) ||
-            "New Arrivals",
+              body.occasion,
+              100
+            ),
+
+          pattern:
+            cleanText(
+              body.pattern,
+              100
+            ),
+
+          border:
+            cleanText(
+              body.border,
+              100
+            ),
+
+          work:
+            cleanText(
+              body.work,
+              100
+            ),
+
+          blouse:
+            cleanText(
+              body.blouse,
+              100
+            ),
+
+          featured:
+            Boolean(
+              body.featured
+            ),
 
           price:
             Math.max(
@@ -816,6 +891,7 @@ export default {
               id,
               name,
               category,
+              department,
               price,
               old_price,
               stock,
@@ -824,13 +900,20 @@ export default {
               images,
               image,
               description,
+              occasion,
+              pattern,
+              border_type,
+              work_type,
+              blouse_piece,
+              featured,
               created_at,
               updated_at
             )
 
             VALUES (
-              ?, ?, ?, ?, ?, ?, ?,
-              ?, ?, ?, ?, ?, ?
+              ?, ?, ?, ?, ?, ?, ?, ?,
+              ?, ?, ?, ?, ?, ?, ?, ?,
+              ?, ?, ?, ?
             )
 
             ON CONFLICT(id)
@@ -841,6 +924,9 @@ export default {
 
               category =
                 excluded.category,
+
+              department =
+                excluded.department,
 
               price =
                 excluded.price,
@@ -866,12 +952,31 @@ export default {
               description =
                 excluded.description,
 
+              occasion =
+                excluded.occasion,
+
+              pattern =
+                excluded.pattern,
+
+              border_type =
+                excluded.border_type,
+
+              work_type =
+                excluded.work_type,
+
+              blouse_piece =
+                excluded.blouse_piece,
+
+              featured =
+                excluded.featured,
+
               updated_at =
                 excluded.updated_at
           `)
           .bind(
             product.id,
             product.name,
+            product.fabric,
             product.category,
             product.price,
             product.oldPrice,
@@ -887,6 +992,14 @@ export default {
             ),
             product.image,
             product.description,
+            product.occasion,
+            product.pattern,
+            product.border,
+            product.work,
+            product.blouse,
+            product.featured
+              ? 1
+              : 0,
             now,
             now
           )
@@ -1940,6 +2053,105 @@ function safeJsonArray(
 
 
 // ==========================================
+// PRODUCT FILTER METADATA SCHEMA
+// ==========================================
+
+async function ensureProductMetadataColumns(
+  env
+) {
+  if (productMetadataReady) {
+    return;
+  }
+
+  const definitions = [
+    [
+      "department",
+      "department TEXT NOT NULL DEFAULT 'Sarees'"
+    ],
+    [
+      "occasion",
+      "occasion TEXT NOT NULL DEFAULT ''"
+    ],
+    [
+      "pattern",
+      "pattern TEXT NOT NULL DEFAULT ''"
+    ],
+    [
+      "border_type",
+      "border_type TEXT NOT NULL DEFAULT ''"
+    ],
+    [
+      "work_type",
+      "work_type TEXT NOT NULL DEFAULT ''"
+    ],
+    [
+      "blouse_piece",
+      "blouse_piece TEXT NOT NULL DEFAULT ''"
+    ],
+    [
+      "featured",
+      "featured INTEGER NOT NULL DEFAULT 0"
+    ]
+  ];
+
+  const schema =
+    await env.DB
+      .prepare(
+        "PRAGMA table_info(products)"
+      )
+      .all();
+
+  const columns =
+    new Set(
+      (schema.results || [])
+        .map(column =>
+          String(column.name)
+        )
+    );
+
+  for (
+    const [name, definition]
+    of definitions
+  ) {
+    if (columns.has(name)) {
+      continue;
+    }
+
+    try {
+      await env.DB
+        .prepare(
+          `ALTER TABLE products ADD COLUMN ${definition}`
+        )
+        .run();
+
+    } catch (error) {
+      const updatedSchema =
+        await env.DB
+          .prepare(
+            "PRAGMA table_info(products)"
+          )
+          .all();
+
+      const nowExists =
+        (updatedSchema.results || [])
+          .some(column =>
+            String(column.name) ===
+            name
+          );
+
+      if (!nowExists) {
+        throw error;
+      }
+    }
+
+    columns.add(name);
+  }
+
+  productMetadataReady = true;
+}
+
+
+// ==========================================
 // PRODUCT FROM DATABASE
 // ==========================================
 
@@ -1961,7 +2173,37 @@ function productFromRow(
       row.name,
 
     category:
-      row.category,
+      row.department ||
+      "Sarees",
+
+    fabric:
+      row.category ||
+      "",
+
+    occasion:
+      row.occasion ||
+      "",
+
+    pattern:
+      row.pattern ||
+      "",
+
+    border:
+      row.border_type ||
+      "",
+
+    work:
+      row.work_type ||
+      "",
+
+    blouse:
+      row.blouse_piece ||
+      "",
+
+    featured:
+      Boolean(
+        row.featured
+      ),
 
     price:
       Number(
