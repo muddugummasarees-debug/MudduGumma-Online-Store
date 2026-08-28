@@ -605,6 +605,280 @@ function showSareeTypes() {
 }
 
 // ==========================================
+// HEADER PRODUCT SEARCH
+// ==========================================
+
+function headerSearchProductText(
+  product
+) {
+  const sareeType =
+    getSareeTypeDefinition(product);
+
+  return [
+    product.id,
+    product.name,
+    product.description,
+    product.category,
+    product.fabric,
+    sareeType?.label,
+    sareeType?.resultLabel,
+    product.occasion,
+    product.pattern,
+    product.border,
+    product.work,
+    product.blouse,
+    ...(Array.isArray(product.colors)
+      ? product.colors
+      : []),
+    ...(Array.isArray(product.sizes)
+      ? product.sizes
+      : []),
+    ...(Array.isArray(product.tags)
+      ? product.tags
+      : [])
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function headerSearchMatches(
+  query
+) {
+  const words =
+    String(query || "")
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+
+  const newestProducts =
+    [...storeProducts]
+      .sort((a, b) =>
+        new Date(
+          b.createdAt ||
+          b.updatedAt ||
+          0
+        ).getTime() -
+        new Date(
+          a.createdAt ||
+          a.updatedAt ||
+          0
+        ).getTime()
+      );
+
+  if (!words.length) {
+    return newestProducts.slice(0, 6);
+  }
+
+  return newestProducts
+    .filter(product => {
+      const searchable =
+        headerSearchProductText(product);
+
+      return words.every(word =>
+        searchable.includes(word)
+      );
+    })
+    .slice(0, 8);
+}
+
+function renderHeaderSearchSuggestions(
+  query = ""
+) {
+  const container =
+    document.getElementById(
+      "headerSearchSuggestions"
+    );
+
+  if (!container) {
+    return;
+  }
+
+  if (!storeProducts.length) {
+    container.innerHTML = `
+      <div class="header-search-empty">
+        <strong>No sarees are available yet.</strong>
+        <span>New collections will appear here automatically.</span>
+      </div>
+    `;
+
+    return;
+  }
+
+  const cleanQuery =
+    String(query || "").trim();
+
+  const matches =
+    headerSearchMatches(cleanQuery);
+
+  if (!matches.length) {
+    container.innerHTML = `
+      <div class="header-search-empty">
+        <strong>No matching sarees found.</strong>
+        <span>Try another name, fabric, color or category.</span>
+      </div>
+    `;
+
+    return;
+  }
+
+  container.innerHTML = `
+    <p class="header-search-caption">
+      ${cleanQuery
+        ? `${matches.length} matching ${matches.length === 1 ? "saree" : "sarees"}`
+        : "Newest sarees"
+      }
+    </p>
+
+    <div class="header-search-results">
+      ${matches.map(product => {
+        const image =
+          productImages(product)[0] || "";
+
+        const fabric =
+          getSareeTypeDefinition(product)
+            .resultLabel
+            .replace(/\s*Sarees$/i, "");
+
+        return `
+          <button
+            type="button"
+            class="header-search-result"
+            data-product-id="${escapeAttribute(product.id)}"
+            onclick="openHeaderSearchProduct(this.dataset.productId)"
+          >
+            ${image
+              ? `
+                <img
+                  src="${escapeAttribute(image)}"
+                  alt=""
+                  loading="lazy"
+                >
+              `
+              : `
+                <span class="header-search-no-image">
+                  MG
+                </span>
+              `
+            }
+
+            <span class="header-search-result-copy">
+              <strong>${escapeHTML(product.name)}</strong>
+              <small>${escapeHTML(fabric)}</small>
+            </span>
+
+            <b>
+              ₹${Number(
+                product.price || 0
+              ).toLocaleString("en-IN")}
+            </b>
+          </button>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function openHeaderSearch() {
+  const panel =
+    document.getElementById(
+      "headerSearchPanel"
+    );
+
+  const button =
+    document.getElementById(
+      "searchButton"
+    );
+
+  const input =
+    document.getElementById(
+      "headerSearchInput"
+    );
+
+  if (!panel) {
+    return;
+  }
+
+  panel.hidden = false;
+
+  button?.setAttribute(
+    "aria-expanded",
+    "true"
+  );
+
+  renderHeaderSearchSuggestions(
+    input?.value || ""
+  );
+
+  requestAnimationFrame(() => {
+    input?.focus();
+    input?.select();
+  });
+}
+
+function closeHeaderSearch() {
+  const panel =
+    document.getElementById(
+      "headerSearchPanel"
+    );
+
+  if (panel) {
+    panel.hidden = true;
+  }
+
+  document
+    .getElementById("searchButton")
+    ?.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+}
+
+function submitHeaderSearch(
+  event
+) {
+  event?.preventDefault();
+
+  const input =
+    document.getElementById(
+      "headerSearchInput"
+    );
+
+  const query =
+    input?.value.trim() || "";
+
+  if (!query) {
+    renderHeaderSearchSuggestions("");
+    input?.focus();
+    return;
+  }
+
+  selectSareeCategory("all");
+
+  const collectionSearch =
+    document.getElementById(
+      "filterSearch"
+    );
+
+  if (collectionSearch) {
+    collectionSearch.value =
+      query;
+  }
+
+  applyProductFilters();
+  closeHeaderSearch();
+}
+
+function openHeaderSearchProduct(
+  productId
+) {
+  closeHeaderSearch();
+  openProductDetail(productId);
+}
+
+
+// ==========================================
 // PRODUCT FILTERS
 // ==========================================
 
@@ -2584,6 +2858,21 @@ window.goToCheckout =
 window.changeProductImage =
   changeProductImage;
 
+window.openHeaderSearch =
+  openHeaderSearch;
+
+window.closeHeaderSearch =
+  closeHeaderSearch;
+
+window.submitHeaderSearch =
+  submitHeaderSearch;
+
+window.renderHeaderSearchSuggestions =
+  renderHeaderSearchSuggestions;
+
+window.openHeaderSearchProduct =
+  openHeaderSearchProduct;
+
 window.applyProductFilters =
   applyProductFilters;
 
@@ -2618,10 +2907,35 @@ window.addWishlistItemToCart =
   addWishlistItemToCart;
 
 
+document.addEventListener("click", event => {
+  const panel =
+    document.getElementById(
+      "headerSearchPanel"
+    );
+
+  const button =
+    document.getElementById(
+      "searchButton"
+    );
+
+  if (
+    !panel ||
+    panel.hidden ||
+    panel.contains(event.target) ||
+    button?.contains(event.target)
+  ) {
+    return;
+  }
+
+  closeHeaderSearch();
+});
+
+
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     closeProductDetail();
     closeWishlist();
+    closeHeaderSearch();
   }
 });
 
