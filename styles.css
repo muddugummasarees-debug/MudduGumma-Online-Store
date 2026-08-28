@@ -20,7 +20,7 @@ html{
 
 body{
   margin:0;
-  background:var(--cream);
+background:linear-gradient(180deg,#fffaf6 0%,#fdf0f4 55%,#fff8f5 100%);
   color:var(--ink);
   font-family:Montserrat,Arial,sans-serif;
 }
@@ -39,7 +39,7 @@ a{
   align-items:center;
   justify-content:space-between;
   padding:10px clamp(18px,5vw,72px);
-  background:rgba(255,250,247,.96);
+  background:rgba(255,244,247,.96);
   backdrop-filter:blur(12px);
   position:sticky;
   top:0;
@@ -140,8 +140,8 @@ nav a:hover{
   padding:40px clamp(18px,6vw,90px);
   gap:clamp(30px,6vw,90px);
   background:
-    radial-gradient(circle at 75% 30%,rgba(233,45,104,.10),transparent 35%),
-    linear-gradient(135deg,#fffdfa,#fff6f2);
+    radial-gradient(circle at 82% 28%,rgba(184,121,37,.15),transparent 28%),radial-gradient(circle at 18% 85%,rgba(169,15,72,.10),transparent 32%),
+  linear-gradient(135deg,#fff8f3 0%,#fbe8ee 55%,#f7dfe8 100%);
 }
 
 .hero-art{
@@ -234,7 +234,7 @@ h2 em{
 
 .intro{
   text-align:center;
-  background:#fff;
+  background:linear-gradient(180deg,#fffdfb 0%,#fff5f7 100%);
 }
 
 .section-label{
