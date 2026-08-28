@@ -579,7 +579,79 @@ export default {
           }
         );
       }
+      // ==========================================
+      // CUSTOMER MY ORDERS
+      // ==========================================
 
+      if (
+        path === "/api/customer/orders" &&
+        request.method === "GET"
+      ) {
+        const session =
+          await getCustomerSession(
+            request,
+            env
+          );
+
+        if (!session) {
+          return json(
+            {
+              error:
+                "Customer login required."
+            },
+            401
+          );
+        }
+
+        const result =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                amount,
+                items,
+                status,
+                created_at,
+                paid_at
+              FROM orders
+              WHERE customer_id = ?
+              ORDER BY created_at DESC
+            `)
+            .bind(
+              Number(
+                session.customer.id
+              )
+            )
+            .all();
+
+        const orders =
+          (result.results || [])
+            .map(order => ({
+              id:
+                order.id,
+
+              amount:
+                Number(
+                  order.amount || 0
+                ),
+
+              items:
+               JSON.parse(order.items || "[]"),
+
+              status:
+                order.status,
+
+              createdAt:
+                order.created_at,
+
+              paidAt:
+                order.paid_at
+            }));
+
+        return json({
+          orders
+        });
+      }
       // ==========================================
       // GET PRODUCTS
       // ==========================================
