@@ -257,6 +257,110 @@
       color:var(--muted);
     }
 
+    .orders-section{
+      margin-top:24px;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:18px;
+      padding:24px;
+    }
+
+    .orders-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .orders-title h2{
+      margin:0;
+      color:var(--wine);
+    }
+
+    .orders-refresh{
+      border:1px solid #ebced8;
+      background:#fff7fa;
+      color:var(--wine);
+      border-radius:999px;
+      padding:9px 14px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .orders-list{
+      display:grid;
+      gap:14px;
+    }
+
+    .order-card{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:18px;
+      background:#fffafc;
+    }
+
+    .order-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:10px;
+    }
+
+    .order-id{
+      font-weight:800;
+      color:var(--text);
+      overflow-wrap:anywhere;
+    }
+
+    .order-meta{
+      margin-top:5px;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .order-status{
+      flex:0 0 auto;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#f3e8ed;
+      color:var(--wine);
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .order-status[data-status="paid"]{
+      background:#e5f5eb;
+      color:#247649;
+    }
+
+    .order-items{
+      display:grid;
+      gap:8px;
+      padding-top:10px;
+      border-top:1px solid #f0e5e9;
+    }
+
+    .order-item{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      color:var(--text);
+      font-size:14px;
+    }
+
+    .order-empty{
+      padding:24px 12px;
+      text-align:center;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .order-empty.error{
+      color:#b32643;
+    }
+
     @media(max-width:650px){
       main{
         margin:28px auto;
@@ -483,6 +587,22 @@
 
       </div>
 
+      <section class="orders-section" aria-labelledby="ordersHeading">
+        <div class="orders-title">
+          <h2 id="ordersHeading">My Orders</h2>
+          <button
+            class="orders-refresh"
+            type="button"
+            onclick="loadCustomerOrders()"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <div id="ordersList" class="orders-list" aria-live="polite">
+          <div class="order-empty">Loading your orders...</div>
+        </div>
+      </section>
     </div>
 
   </div>
@@ -577,6 +697,193 @@
   }
 
 
+  function formatRupees(value) {
+    const amount = Number(value || 0);
+
+    return "₹" +
+      amount.toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+  }
+
+
+  function formatOrderDate(value) {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Date unavailable";
+    }
+
+    return date.toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    });
+  }
+
+
+  function orderStatusText(value) {
+    const status =
+      String(value || "created")
+        .replace(/_/g, " ");
+
+    return status.charAt(0).toUpperCase() +
+      status.slice(1);
+  }
+
+
+  function showOrdersMessage(text, type) {
+    const list =
+      document.getElementById("ordersList");
+
+    const message =
+      document.createElement("div");
+
+    message.className =
+      "order-empty" +
+      (type === "error" ? " error" : "");
+
+    message.textContent = text;
+    list.replaceChildren(message);
+  }
+
+
+  function renderCustomerOrders(orders) {
+    const list =
+      document.getElementById("ordersList");
+
+    list.replaceChildren();
+
+    if (!Array.isArray(orders) || !orders.length) {
+      showOrdersMessage(
+        "You have not placed any orders yet.",
+        ""
+      );
+      return;
+    }
+
+    orders.forEach(order => {
+      const card =
+        document.createElement("article");
+      card.className = "order-card";
+
+      const head =
+        document.createElement("div");
+      head.className = "order-head";
+
+      const details =
+        document.createElement("div");
+
+      const id =
+        document.createElement("div");
+      id.className = "order-id";
+      id.textContent =
+        "Order #" + String(order.id || "-");
+
+      const meta =
+        document.createElement("div");
+      meta.className = "order-meta";
+      meta.textContent =
+        formatOrderDate(order.createdAt) +
+        " · Total " +
+        formatRupees(order.amount);
+
+      details.append(id, meta);
+
+      const status =
+        document.createElement("span");
+      status.className = "order-status";
+      status.dataset.status =
+        String(order.status || "created")
+          .toLowerCase();
+      status.textContent =
+        orderStatusText(order.status);
+
+      head.append(details, status);
+      card.append(head);
+
+      const itemsWrap =
+        document.createElement("div");
+      itemsWrap.className = "order-items";
+
+      const items =
+        Array.isArray(order.items)
+          ? order.items
+          : [];
+
+      if (!items.length) {
+        const item =
+          document.createElement("div");
+        item.className = "order-item";
+        item.textContent =
+          "No item details available.";
+        itemsWrap.append(item);
+      } else {
+        items.forEach(orderItem => {
+          const row =
+            document.createElement("div");
+          row.className = "order-item";
+
+          const name =
+            document.createElement("span");
+          const quantity =
+            Math.max(
+              1,
+              Number(orderItem.quantity || 1)
+            );
+          name.textContent =
+            String(orderItem.name || "Item") +
+            " × " + quantity;
+
+          const price =
+            document.createElement("strong");
+          price.textContent =
+            formatRupees(
+              Number(orderItem.price || 0) *
+              quantity
+            );
+
+          row.append(name, price);
+          itemsWrap.append(row);
+        });
+      }
+
+      card.append(itemsWrap);
+      list.append(card);
+    });
+  }
+
+
+  async function loadCustomerOrders() {
+    showOrdersMessage("Loading your orders...", "");
+
+    try {
+      const response =
+        await fetch("/api/customer/orders", {
+          credentials: "same-origin"
+        });
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          "Could not load your orders."
+        );
+      }
+
+      renderCustomerOrders(data.orders);
+    } catch (error) {
+      console.error(error);
+      showOrdersMessage(
+        error.message ||
+          "Could not load your orders.",
+        "error"
+      );
+    }
+  }
+
   function showProfile(customer) {
 
     document
@@ -636,6 +943,8 @@
       link.textContent =
         "Continue Shopping";
     }
+
+    loadCustomerOrders();
   }
 
 
