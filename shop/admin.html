@@ -58,6 +58,32 @@ input,select,textarea{
   font:inherit
 }
 textarea{min-height:90px}
+.checkbox-line{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin:18px 0 8px;
+  padding:14px;
+  border:1px solid #eadde2;
+  border-radius:9px;
+  background:#fff8fa;
+}
+.checkbox-line input{
+  width:18px;
+  height:18px;
+  margin:1px 0 0;
+  accent-color:var(--wine)
+}
+.checkbox-line span{
+  display:block
+}
+.checkbox-line small{
+  display:block;
+  margin-top:4px;
+  color:#75656d;
+  font-weight:400;
+  line-height:1.4
+}
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -162,6 +188,20 @@ img.thumb{
 <div class="grid">
 
 <div>
+  <label>Product type *</label>
+  <select id="productType" required>
+    <option value="Sarees" selected>Sarees</option>
+    <option value="Kurtis">Kurtis</option>
+    <option value="Dresses">Dresses</option>
+    <option value="Lehengas">Lehengas</option>
+    <option value="Blouses">Blouses</option>
+    <option value="Dress Materials">Dress Materials</option>
+    <option value="Dupattas">Dupattas</option>
+    <option value="Co-ord Sets">Co-ord Sets</option>
+  </select>
+</div>
+
+<div>
   <label>Product name *</label>
   <input id="name" placeholder="e.g. Designer Saree">
 </div>
@@ -227,7 +267,80 @@ img.thumb{
   <input id="colors" placeholder="Pink, Blue, Black">
 </div>
 
+<div>
+  <label>Occasion</label>
+  <select id="occasion">
+    <option value="">Not specified</option>
+    <option value="Casual">Casual</option>
+    <option value="Daily Wear">Daily Wear</option>
+    <option value="Office Wear">Office Wear</option>
+    <option value="Festive">Festive</option>
+    <option value="Party Wear">Party Wear</option>
+    <option value="Wedding">Wedding</option>
+    <option value="Bridal">Bridal</option>
+    <option value="Traditional">Traditional</option>
+  </select>
 </div>
+
+<div>
+  <label>Pattern / Design</label>
+  <select id="pattern">
+    <option value="">Not specified</option>
+    <option value="Plain">Plain</option>
+    <option value="Floral">Floral</option>
+    <option value="Printed">Printed</option>
+    <option value="Embroidered">Embroidered</option>
+    <option value="Zari">Zari</option>
+    <option value="Checks">Checks</option>
+    <option value="Stripes">Stripes</option>
+    <option value="Bandhani">Bandhani</option>
+    <option value="Kalamkari">Kalamkari</option>
+    <option value="Ikat">Ikat</option>
+  </select>
+</div>
+
+<div>
+  <label>Border Type</label>
+  <select id="border">
+    <option value="">Not specified</option>
+    <option value="Zari Border">Zari Border</option>
+    <option value="Contrast Border">Contrast Border</option>
+    <option value="Embroidered Border">Embroidered Border</option>
+    <option value="No Border">No Border</option>
+  </select>
+</div>
+
+<div>
+  <label>Work</label>
+  <select id="work">
+    <option value="">Not specified</option>
+    <option value="Handloom">Handloom</option>
+    <option value="Zari Work">Zari Work</option>
+    <option value="Embroidery">Embroidery</option>
+    <option value="Sequin Work">Sequin Work</option>
+    <option value="Thread Work">Thread Work</option>
+    <option value="Stone Work">Stone Work</option>
+  </select>
+</div>
+
+<div>
+  <label>Blouse Piece</label>
+  <select id="blouse">
+    <option value="">Not specified</option>
+    <option value="Included">Blouse Piece Included</option>
+    <option value="Not Included">Blouse Piece Not Included</option>
+  </select>
+</div>
+
+</div>
+
+<label class="checkbox-line">
+  <input id="featured" type="checkbox">
+  <span>
+    Featured / Recommended
+    <small>Featured products appear first when customers choose Recommended.</small>
+  </span>
+</label>
 
 <label>Description</label>
 <textarea id="description"></textarea>
@@ -436,7 +549,7 @@ async function load(){
 
     <td>${p.stock}</td>
 
-    <td>${esc(p.category)}</td>
+    <td>${esc(p.fabric||p.category)}</td>
 
     <td class="row">
       <button class="btn" onclick="edit('${p.id}')">
@@ -511,6 +624,24 @@ function edit(id){
 
   $('colors').value=
     (p.colors||[]).join(', ');
+
+  $('occasion').value=
+    p.occasion||'';
+
+  $('pattern').value=
+    p.pattern||'';
+
+  $('border').value=
+    p.border||'';
+
+  $('work').value=
+    p.work||'';
+
+  $('blouse').value=
+    p.blouse||'';
+
+  $('featured').checked=
+    Boolean(p.featured);
 
   $('description').value=
     p.description||'';
@@ -704,7 +835,29 @@ async function saveProduct(){
 
     name:productName,
 
-    category:selectedFabric,
+    category:
+      $('productType').value||
+      'Sarees',
+
+    fabric:selectedFabric,
+
+    occasion:
+      $('occasion').value,
+
+    pattern:
+      $('pattern').value,
+
+    border:
+      $('border').value,
+
+    work:
+      $('work').value,
+
+    blouse:
+      $('blouse').value,
+
+    featured:
+      $('featured').checked,
 
     price:Number(
       $('price').value
@@ -795,14 +948,21 @@ function resetForm(){
     'colors',
     'description',
     'imageFile',
-    'customFabric'
+    'customFabric',
+    'occasion',
+    'pattern',
+    'border',
+    'work',
+    'blouse'
   ].forEach(id=>{
     $(id).value='';
   });
 
   $('stock').value=0;
 
+  $('productType').value='Sarees';
   $('category').value='';
+  $('featured').checked=false;
   updateCustomFabricField();
 
   $('imagePreview').innerHTML='';
