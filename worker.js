@@ -1051,7 +1051,25 @@ export default {
         path ===
           "/api/create-order" &&
         request.method === "POST"
-      ) {
+      ) {        
+        const customerSession =
+          await getCustomerSession(
+            request,
+            env
+          );
+
+        if (!customerSession) {
+          return json(
+            {
+              error:
+                "Customer login required."
+            },
+            401
+          );
+        }
+
+        const loggedInCustomer =
+          customerSession.customer;
         if (
           !env.RAZORPAY_KEY_ID ||
           !env.RAZORPAY_KEY_SECRET
@@ -1262,6 +1280,7 @@ export default {
           .prepare(`
             INSERT INTO orders (
               id,
+              customer_id,
               razorpay_order_id,
               razorpay_payment_id,
               amount,
@@ -1275,6 +1294,7 @@ export default {
             VALUES (
               ?,
               ?,
+              ?,
               NULL,
               ?,
               ?,
@@ -1286,6 +1306,7 @@ export default {
           `)
           .bind(
             localOrderId,
+            Number(loggedInCustomer.id),
             razorpayOrder.id,
             totalRupees,
             JSON.stringify(
