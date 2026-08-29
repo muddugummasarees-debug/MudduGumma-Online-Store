@@ -3208,18 +3208,17 @@ function findVerifiedPhone(value) {
 
 async function verifyMsg91AccessToken(accessToken, authKey) {
   try {
-    const form = new URLSearchParams();
-    form.set("authkey", String(authKey));
-    form.set("access-token", accessToken);
-
     const response = await fetch(
       "https://control.msg91.com/api/v5/widget/verifyAccessToken",
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          "Content-Type": "application/json"
         },
-        body: form.toString()
+        body: JSON.stringify({
+          authkey: String(authKey),
+          "access-token": accessToken
+        })
       }
     );
 
