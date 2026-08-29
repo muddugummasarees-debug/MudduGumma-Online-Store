@@ -1138,6 +1138,7 @@
 
 
   let otpWidgetReady = false;
+  let otpRequestId = "";
 
 
   async function initializeOtpWidget() {
@@ -1175,6 +1176,25 @@
     } catch (error) {
       setMessage("otpMessage", error.message || "SMS OTP is unavailable.", "error");
     }
+  }
+
+
+  function otpRequestIdFrom(data) {
+    if (!data || typeof data !== "object") return "";
+
+    return String(
+      data.reqId ||
+      data.req_id ||
+      data.requestId ||
+      data.request_id ||
+      (data.data && (
+        data.data.reqId ||
+        data.data.req_id ||
+        data.data.requestId ||
+        data.data.request_id
+      )) ||
+      ""
+    );
   }
 
 
@@ -1220,7 +1240,8 @@
 
       window.sendOtp(
         "91" + phone,
-        function() {
+        function(result) {
+          otpRequestId = otpRequestIdFrom(result);
           document.getElementById("otpCodeArea").style.display = "block";
           document.getElementById("otpCode").focus();
           setMessage("otpMessage", "OTP sent to your mobile number.", "success");
@@ -1255,7 +1276,7 @@
       button.textContent = "VERIFYING...";
 
       window.verifyOtp(
-        otp,
+        Number(otp),
         async function(result) {
           try {
             const accessToken = otpAccessToken(result);
@@ -1289,7 +1310,8 @@
           setMessage("otpMessage", "The OTP is incorrect or expired. Please try again.", "error");
           button.disabled = false;
           button.textContent = "VERIFY & LOGIN";
-        }
+        },
+        otpRequestId || undefined
       );
     });
 
