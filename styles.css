@@ -4416,3 +4416,66 @@ footer{
 }
 
 .hero{background-image:linear-gradient(90deg,rgba(255,250,246,.76) 0%,rgba(255,250,246,.48) 42%,rgba(255,250,246,.08) 68%,rgba(255,250,246,0) 100%),url("/assets/floral-hero-watercolor.jpg?v=3")!important}
+
+
+/* =====================================================
+   ROYAL JEWELLERY MOOD — APPROVED HERO
+===================================================== */
+.hero{
+  min-height:calc(100vh - 82px);
+  grid-template-columns:minmax(430px,.82fr) 1.18fr;
+  align-items:center;
+  background-image:
+    linear-gradient(90deg,rgba(255,248,239,.98) 0%,rgba(255,248,239,.92) 31%,rgba(255,248,239,.34) 49%,rgba(255,248,239,0) 66%),
+    url("/assets/royal-jewellery-hero.jpg?v=1")!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  border-bottom:1px solid rgba(181,138,82,.22);
+}
+.hero-copy{
+  max-width:660px;
+  padding:clamp(26px,4vw,54px);
+  background:rgba(255,250,244,.52);
+  border:1px solid rgba(181,138,82,.16);
+  box-shadow:0 24px 70px rgba(91,52,40,.10);
+  backdrop-filter:blur(3px);
+}
+.hero h1{
+  color:#732f3a;
+  font-size:clamp(60px,7vw,104px);
+}
+.hero h1 em{color:#b25363}
+.hero .eyebrow{color:#a77839}
+.hero-copy p{color:#705e58;max-width:535px}
+.hero .button.primary{
+  background:linear-gradient(135deg,#a74757,#762d39);
+  box-shadow:0 14px 30px rgba(118,45,57,.22);
+}
+.hero .button.secondary{
+  border-color:rgba(118,45,57,.20);
+  color:#762d39;
+  background:rgba(255,252,248,.86);
+}
+@media(max-width:900px){
+  .hero{
+    min-height:820px;
+    grid-template-columns:1fr;
+    align-content:end;
+    padding-bottom:42px;
+    background-image:
+      linear-gradient(180deg,rgba(255,248,239,.08) 30%,rgba(255,248,239,.88) 66%,rgba(255,248,239,.98) 100%),
+      url("/assets/royal-jewellery-hero.jpg?v=1")!important;
+    background-position:68% center!important;
+  }
+  .hero-copy{
+    max-width:680px;
+    background:rgba(255,250,244,.80);
+    backdrop-filter:blur(5px);
+  }
+}
+@media(max-width:560px){
+  .hero{min-height:720px;background-position:65% center!important}
+  .hero h1{font-size:clamp(48px,15vw,70px)}
+  .hero-copy{padding:26px 20px}
+}
