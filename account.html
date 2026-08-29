@@ -444,12 +444,21 @@
 
       <div class="tabs">
         <button
-          id="loginTab"
+          id="otpTab"
           class="tab-button active"
+          type="button"
+          onclick="showTab('otp')"
+        >
+          Mobile OTP
+        </button>
+
+        <button
+          id="loginTab"
+          class="tab-button"
           type="button"
           onclick="showTab('login')"
         >
-          Login
+          Password Login
         </button>
 
         <button
@@ -462,7 +471,44 @@
         </button>
       </div>
 
-      <section id="loginPanel" class="panel active">
+      <section id="otpPanel" class="panel active">
+        <form id="otpForm">
+          <label for="otpPhone">Mobile Number</label>
+          <input
+            id="otpPhone"
+            type="tel"
+            inputmode="numeric"
+            maxlength="10"
+            pattern="[6-9][0-9]{9}"
+            autocomplete="tel"
+            placeholder="10-digit Indian mobile number"
+            required
+          >
+
+          <button id="sendOtpButton" class="primary-button" type="button">
+            SEND OTP
+          </button>
+
+          <div id="otpCodeArea" style="display:none;">
+            <label for="otpCode">Enter OTP</label>
+            <input
+              id="otpCode"
+              type="text"
+              inputmode="numeric"
+              maxlength="8"
+              autocomplete="one-time-code"
+              placeholder="OTP received by SMS"
+            >
+            <button id="verifyOtpButton" class="primary-button" type="submit">
+              VERIFY &amp; LOGIN
+            </button>
+          </div>
+
+          <div id="otpMessage" class="message"></div>
+        </form>
+      </section>
+
+      <section id="loginPanel" class="panel">
 
         <form id="loginForm">
 
@@ -662,29 +708,18 @@
 
 
   function showTab(tab) {
+    ["otp", "login", "register"]
+      .forEach(name => {
+        document
+          .getElementById(name + "Tab")
+          .classList
+          .toggle("active", tab === name);
 
-    const login =
-      tab === "login";
-
-    document
-      .getElementById("loginTab")
-      .classList
-      .toggle("active", login);
-
-    document
-      .getElementById("registerTab")
-      .classList
-      .toggle("active", !login);
-
-    document
-      .getElementById("loginPanel")
-      .classList
-      .toggle("active", login);
-
-    document
-      .getElementById("registerPanel")
-      .classList
-      .toggle("active", !login);
+        document
+          .getElementById(name + "Panel")
+          .classList
+          .toggle("active", tab === name);
+      });
   }
 
 
@@ -1102,6 +1137,163 @@
   }
 
 
+  let otpWidgetReady = false;
+
+
+  async function initializeOtpWidget() {
+    try {
+      const response = await fetch("/api/customer/otp-config", {
+        credentials: "same-origin"
+      });
+      const config = await response.json();
+
+      if (!response.ok) {
+        throw new Error(config.error || "SMS OTP is unavailable.");
+      }
+
+      window.mgOtpConfiguration = {
+        widgetId: config.widgetId,
+        tokenAuth: config.tokenAuth,
+        exposeMethods: true,
+        success: function() {},
+        failure: function(error) {
+          console.error("MSG91 OTP error", error);
+        }
+      };
+
+      const script = document.createElement("script");
+      script.src = "https://verify.msg91.com/otp-provider.js";
+      script.async = true;
+      script.onload = function() {
+        window.initSendOTP(window.mgOtpConfiguration);
+        otpWidgetReady = true;
+      };
+      script.onerror = function() {
+        setMessage("otpMessage", "Could not load SMS OTP. Please try again.", "error");
+      };
+      document.head.appendChild(script);
+    } catch (error) {
+      setMessage("otpMessage", error.message || "SMS OTP is unavailable.", "error");
+    }
+  }
+
+
+  function otpAccessToken(data) {
+    if (typeof data === "string") return data;
+    if (!data || typeof data !== "object") return "";
+
+    return String(
+      data.accessToken ||
+      data.access_token ||
+      data["access-token"] ||
+      data.message ||
+      (data.data && (
+        data.data.accessToken ||
+        data.data.access_token ||
+        data.data["access-token"] ||
+        data.data.message
+      )) ||
+      ""
+    );
+  }
+
+
+  document
+    .getElementById("sendOtpButton")
+    .addEventListener("click", function() {
+      const phone = document.getElementById("otpPhone").value.replace(/\D/g, "");
+
+      if (!/^[6-9][0-9]{9}$/.test(phone)) {
+        setMessage("otpMessage", "Please enter a valid 10-digit Indian mobile number.", "error");
+        return;
+      }
+
+      if (!otpWidgetReady || typeof window.sendOtp !== "function") {
+        setMessage("otpMessage", "SMS OTP is still loading. Please try again in a moment.", "error");
+        return;
+      }
+
+      const button = document.getElementById("sendOtpButton");
+      button.disabled = true;
+      button.textContent = "SENDING OTP...";
+      setMessage("otpMessage", "", "");
+
+      window.sendOtp(
+        "91" + phone,
+        function() {
+          document.getElementById("otpCodeArea").style.display = "block";
+          document.getElementById("otpCode").focus();
+          setMessage("otpMessage", "OTP sent to your mobile number.", "success");
+          button.textContent = "RESEND OTP";
+          button.disabled = false;
+        },
+        function(error) {
+          console.error(error);
+          setMessage("otpMessage", "Could not send OTP. Check the number and try again.", "error");
+          button.textContent = "SEND OTP";
+          button.disabled = false;
+        }
+      );
+    });
+
+
+  document
+    .getElementById("otpForm")
+    .addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const otp = document.getElementById("otpCode").value.trim();
+      const phone = document.getElementById("otpPhone").value.replace(/\D/g, "");
+      const button = document.getElementById("verifyOtpButton");
+
+      if (!otp || typeof window.verifyOtp !== "function") {
+        setMessage("otpMessage", "Please enter the OTP received by SMS.", "error");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "VERIFYING...";
+
+      window.verifyOtp(
+        otp,
+        async function(result) {
+          try {
+            const accessToken = otpAccessToken(result);
+            if (!accessToken) throw new Error("MSG91 did not return a verification token.");
+
+            const response = await fetch("/api/customer/otp-login", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ phone, accessToken })
+            });
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.error || "OTP login failed.");
+
+            const next = safeNextUrl();
+            if (next) {
+              window.location.href = next;
+              return;
+            }
+
+            showProfile(data.customer);
+          } catch (error) {
+            setMessage("otpMessage", error.message || "OTP login failed.", "error");
+            button.disabled = false;
+            button.textContent = "VERIFY & LOGIN";
+          }
+        },
+        function(error) {
+          console.error(error);
+          setMessage("otpMessage", "The OTP is incorrect or expired. Please try again.", "error");
+          button.disabled = false;
+          button.textContent = "VERIFY & LOGIN";
+        }
+      );
+    });
+
+
   document
     .getElementById("loginForm")
     .addEventListener(
@@ -1386,8 +1578,10 @@
   }
 
 
+  initializeOtpWidget();
   checkCustomer();
 </script>
 
 </body>
 </html>
+
