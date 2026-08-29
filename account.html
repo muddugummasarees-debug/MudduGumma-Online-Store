@@ -1180,6 +1180,7 @@
 
 
   function otpRequestIdFrom(data) {
+    if (typeof data === "string") return data.trim();
     if (!data || typeof data !== "object") return "";
 
     return String(
@@ -1187,14 +1188,16 @@
       data.req_id ||
       data.requestId ||
       data.request_id ||
+      data.message ||
       (data.data && (
         data.data.reqId ||
         data.data.req_id ||
         data.data.requestId ||
-        data.data.request_id
+        data.data.request_id ||
+        data.data.message
       )) ||
       ""
-    );
+    ).trim();
   }
 
 
