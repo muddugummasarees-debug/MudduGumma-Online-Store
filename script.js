@@ -2225,6 +2225,9 @@ function renderProducts() {
         const wished =
           isWishlisted(product.id);
 
+        const hasVariants =
+          productVariants(product).length > 0;
+
 
         const thumbnails =
           images.length > 1
@@ -2372,16 +2375,24 @@ function renderProducts() {
                       <button
                         type="button"
                         class="button add-cart-btn"
-                        onclick="addToCart('${escapeJS(product.id)}')"
+                        onclick="${
+                          hasVariants
+                            ? `openProductDetail('${escapeJS(product.id)}')`
+                            : `addToCart('${escapeJS(product.id)}')`
+                        }"
                       >
-                        Add to Cart
+                        ${hasVariants ? "Select Options" : "Add to Cart"}
                       </button>
 
 
                       <button
                         type="button"
                         class="button buy-now-btn"
-                        onclick="buyNow('${escapeJS(product.id)}')"
+                        onclick="${
+                          hasVariants
+                            ? `openProductDetail('${escapeJS(product.id)}')`
+                            : `buyNow('${escapeJS(product.id)}')`
+                        }"
                       >
                         Buy Now
                       </button>
@@ -2434,6 +2445,43 @@ function findStoreProduct(productId) {
       String(product.id) ===
       String(productId)
   );
+}
+
+
+function productVariants(product) {
+  return Array.isArray(product?.variants)
+    ? product.variants.filter(variant =>
+        variant &&
+        (variant.color || variant.size)
+      )
+    : [];
+}
+
+
+function findProductVariant(product, variantKey) {
+  return productVariants(product)
+    .find(variant =>
+      String(variant.key) ===
+      String(variantKey || "")
+    ) || null;
+}
+
+
+function cartLineKey(item) {
+  return [
+    String(item?.id || ""),
+    String(item?.variantKey || "simple")
+  ].join("::");
+}
+
+
+function cartVariantText(item) {
+  return [
+    item?.color ? `Color: ${item.color}` : "",
+    item?.size ? `Size: ${item.size}` : ""
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 
@@ -2612,7 +2660,14 @@ function renderWishlist() {
 
 
 function addWishlistItemToCart(productId) {
+  const product = findStoreProduct(productId);
   closeWishlist();
+
+  if (productVariants(product).length) {
+    openProductDetail(productId);
+    return;
+  }
+
   addToCart(productId);
 }
 
@@ -2643,6 +2698,7 @@ function openProductDetail(productId) {
   const sizes = Array.isArray(product.sizes)
     ? product.sizes
     : [];
+  const variants = productVariants(product);
 
   const detailSpecs = [
     ["Fabric", product.fabric],
@@ -2740,6 +2796,36 @@ function openProductDetail(productId) {
           : ""
         }
 
+        ${variants.length
+          ? `
+            <div class="product-variant-picker">
+              <label for="productVariantSelect">Choose size / color *</label>
+              <select id="productVariantSelect">
+                <option value="">Choose an available option</option>
+                ${variants.map(variant => {
+                  const label =
+                    [variant.color, variant.size]
+                      .filter(Boolean)
+                      .join(" / ");
+                  const quantity =
+                    Math.max(0, Number(variant.quantity || 0));
+
+                  return `
+                    <option
+                      value="${escapeAttribute(variant.key)}"
+                      ${quantity <= 0 ? "disabled" : ""}
+                    >
+                      ${escapeHTML(label)} — ${quantity} available
+                    </option>
+                  `;
+                }).join("")}
+              </select>
+              <div id="productVariantMessage" class="product-variant-message" aria-live="polite"></div>
+            </div>
+          `
+          : ""
+        }
+
         ${colors.length
           ? `
             <div class="product-detail-option">
@@ -2786,7 +2872,7 @@ function openProductDetail(productId) {
                 type="button"
                 class="detail-cart-button"
                 data-product-id="${productIdValue}"
-                onclick="closeProductDetail(); addToCart(this.dataset.productId)"
+                onclick="addProductDetailToCart(this.dataset.productId, false)"
               >
                 Add to Cart
               </button>
@@ -2795,7 +2881,7 @@ function openProductDetail(productId) {
                 type="button"
                 class="detail-buy-button"
                 data-product-id="${productIdValue}"
-                onclick="buyNow(this.dataset.productId)"
+                onclick="addProductDetailToCart(this.dataset.productId, true)"
               >
                 Buy Now
               </button>
@@ -2817,6 +2903,45 @@ function openProductDetail(productId) {
   document.body.style.overflow = "hidden";
 
   modal.querySelector(".product-detail-close")?.focus();
+}
+
+
+function addProductDetailToCart(
+  productId,
+  buyNowMode
+) {
+  const product = findStoreProduct(productId);
+  const variants = productVariants(product);
+  let selection = {};
+
+  if (variants.length) {
+    const select =
+      document.getElementById("productVariantSelect");
+    const message =
+      document.getElementById("productVariantMessage");
+    const variant =
+      findProductVariant(product, select?.value);
+
+    if (!variant || Number(variant.quantity || 0) <= 0) {
+      if (message) {
+        message.textContent =
+          "Please choose an available size and color.";
+      }
+      select?.focus();
+      return;
+    }
+
+    selection = variant;
+  }
+
+  closeProductDetail();
+
+  if (buyNowMode) {
+    buyNow(productId, selection);
+    return;
+  }
+
+  addToCart(productId, selection);
 }
 
 
@@ -2879,92 +3004,87 @@ function changeProductImage(thumbnail) {
 // ADD TO CART
 // ==========================================
 
-function addToCart(productId) {
+function addToCart(
+  productId,
+  selection = {},
+  openAfter = true
+) {
 
-  const product =
-    storeProducts.find(
-      product =>
-        String(product.id) ===
-        String(productId)
-    );
+  const product = findStoreProduct(productId);
 
   if (!product) {
     alert("Product not found.");
-    return;
+    return false;
   }
 
+  const variants = productVariants(product);
+  const selectedVariant =
+    variants.length
+      ? findProductVariant(
+          product,
+          selection.variantKey || selection.key
+        )
+      : null;
+
+  if (
+    variants.length &&
+    (!selectedVariant || Number(selectedVariant.quantity || 0) <= 0)
+  ) {
+    openProductDetail(productId);
+    return false;
+  }
 
   const stock =
-    Number(product.stock || 0);
+    selectedVariant
+      ? Number(selectedVariant.quantity || 0)
+      : Number(product.stock || 0);
 
   if (stock <= 0) {
-
-    alert(
-      "Sorry, this saree is currently out of stock."
-    );
-
-    return;
+    alert("Sorry, this product is currently out of stock.");
+    return false;
   }
 
+  const variantKey =
+    selectedVariant
+      ? String(selectedVariant.key)
+      : "";
 
   const existing =
-    cart.find(
-      item =>
-        String(item.id) ===
-        String(productId)
+    cart.find(item =>
+      String(item.id) === String(productId) &&
+      String(item.variantKey || "") === variantKey
     );
 
-
   if (existing) {
-
-    if (
-      Number(existing.quantity) >=
-      stock
-    ) {
-
-      alert(
-        "You have reached the available stock quantity."
-      );
-
-      return;
+    if (Number(existing.quantity) >= stock) {
+      alert("You have reached the available stock quantity.");
+      return false;
     }
 
     existing.quantity += 1;
 
   } else {
-
-    const images =
-      Array.isArray(product.images)
-        ? product.images
-        : [];
-
+    const images = productImages(product);
 
     cart.push({
-
-      id:
-        product.id,
-
-      name:
-        product.name,
-
-      price:
-        Number(product.price || 0),
-
-      image:
-        images.length
-          ? images[0]
-          : product.image || "",
-
-      quantity: 1
-
+      id: product.id,
+      name: product.name,
+      price: Number(product.price || 0),
+      image: images[0] || product.image || "",
+      quantity: 1,
+      variantKey,
+      color: selectedVariant?.color || "",
+      size: selectedVariant?.size || ""
     });
-
   }
 
-
   saveCart();
-  openCart();
 
+  if (openAfter) {
+    openCart();
+  }
+
+  return true;
 }
 
 
@@ -2972,77 +3092,19 @@ function addToCart(productId) {
 // BUY NOW
 // ==========================================
 
-function buyNow(productId) {
+function buyNow(
+  productId,
+  selection = {}
+) {
+  const added =
+    addToCart(productId, selection, false);
 
-  const product =
-    storeProducts.find(
-      product =>
-        String(product.id) ===
-        String(productId)
-    );
-
-
-  if (!product) {
-    return;
+  if (!added) {
+    return false;
   }
 
-
-  if (
-    Number(product.stock || 0) <= 0
-  ) {
-
-    alert(
-      "Sorry, this saree is currently out of stock."
-    );
-
-    return;
-  }
-
-
-  const existing =
-    cart.find(
-      item =>
-        String(item.id) ===
-        String(productId)
-    );
-
-
-  if (!existing) {
-
-    const images =
-      Array.isArray(product.images)
-        ? product.images
-        : [];
-
-
-    cart.push({
-
-      id:
-        product.id,
-
-      name:
-        product.name,
-
-      price:
-        Number(product.price || 0),
-
-      image:
-        images.length
-          ? images[0]
-          : product.image || "",
-
-      quantity: 1
-
-    });
-
-  }
-
-
-  saveCart();
-
-  window.location.href =
-    "/checkout.html";
-
+  window.location.href = "/checkout.html";
+  return true;
 }
 
 
@@ -3193,137 +3255,66 @@ function closeCart() {
 function renderCart() {
 
   const container =
-    document.getElementById(
-      "cartItems"
-    );
-
-
+    document.getElementById("cartItems");
   const totalElement =
-    document.getElementById(
-      "cartTotal"
-    );
+    document.getElementById("cartTotal");
 
-
-  if (
-    !container ||
-    !totalElement
-  ) {
+  if (!container || !totalElement) {
     return;
   }
-
 
   if (!cart.length) {
-
     container.innerHTML = `
-
       <div class="empty-cart">
-
-        <div class="empty-cart-icon">
-          ♡
-        </div>
-
-        <h3>
-          Your cart is empty
-        </h3>
-
-        <p>
-          Add your favourite MudduGumma sarees
-          to begin shopping.
-        </p>
-
+        <div class="empty-cart-icon">♡</div>
+        <h3>Your cart is empty</h3>
+        <p>Add your favourite MudduGumma products to begin shopping.</p>
       </div>
-
     `;
 
-
-    totalElement.textContent =
-      "₹0";
-
+    totalElement.textContent = "₹0";
     return;
-
   }
-
 
   container.innerHTML =
     cart
-      .map(item => `
+      .map(item => {
+        const lineKey = cartLineKey(item);
+        const variantText = cartVariantText(item);
 
-        <div class="cart-item">
+        return `
+          <div class="cart-item">
+            ${
+              item.image
+                ? `<img src="${escapeAttribute(item.image)}" alt="${escapeHTML(item.name)}">`
+                : ""
+            }
 
-          ${
-            item.image
-              ? `
-                <img
-                  src="${escapeAttribute(item.image)}"
-                  alt="${escapeHTML(item.name)}"
-                >
-              `
-              : ""
-          }
+            <div class="cart-item-info">
+              <strong>${escapeHTML(item.name)}</strong>
 
+              ${
+                variantText
+                  ? `<span class="cart-item-variant">${escapeHTML(variantText)}</span>`
+                  : ""
+              }
 
-          <div class="cart-item-info">
+              <span>₹${Number(item.price).toLocaleString("en-IN")}</span>
 
-            <strong>
-              ${escapeHTML(item.name)}
-            </strong>
+              <div class="quantity-controls">
+                <button type="button" onclick="changeQuantity('${escapeJS(lineKey)}', -1)" title="Reduce quantity">−</button>
+                <span>${Number(item.quantity || 1)}</span>
+                <button type="button" onclick="changeQuantity('${escapeJS(lineKey)}', 1)" title="Increase quantity">+</button>
+              </div>
 
-
-            <span>
-              ₹${Number(item.price).toLocaleString("en-IN")}
-            </span>
-
-
-            <div class="quantity-controls">
-
-              <button
-                type="button"
-                onclick="changeQuantity(
-                  '${escapeJS(item.id)}',
-                  -1
-                )"
-                title="Reduce quantity"
-              >
-                −
+              <button type="button" class="remove-item" onclick="removeFromCart('${escapeJS(lineKey)}')">
+                🗑 Remove
               </button>
-
-
-              <span>
-                ${Number(item.quantity || 1)}
-              </span>
-
-
-              <button
-                type="button"
-                onclick="changeQuantity(
-                  '${escapeJS(item.id)}',
-                  1
-                )"
-                title="Increase quantity"
-              >
-                +
-              </button>
-
             </div>
-
-
-            <button
-              type="button"
-              class="remove-item"
-              onclick="removeFromCart(
-                '${escapeJS(item.id)}'
-              )"
-            >
-              🗑 Remove
-            </button>
-
           </div>
-
-        </div>
-
-      `)
+        `;
+      })
       .join("");
-
 
   const total =
     cart.reduce(
@@ -3334,13 +3325,8 @@ function renderCart() {
       0
     );
 
-
   totalElement.textContent =
-    "₹" +
-    total.toLocaleString(
-      "en-IN"
-    );
-
+    "₹" + total.toLocaleString("en-IN");
 }
 
 
@@ -3349,66 +3335,47 @@ function renderCart() {
 // ==========================================
 
 function changeQuantity(
-  productId,
+  lineKey,
   amount
 ) {
 
   const item =
-    cart.find(
-      item =>
-        String(item.id) ===
-        String(productId)
+    cart.find(item =>
+      cartLineKey(item) === String(lineKey)
     );
-
 
   if (!item) {
     return;
   }
 
+  const product = findStoreProduct(item.id);
+  const variant =
+    item.variantKey
+      ? findProductVariant(product, item.variantKey)
+      : null;
 
-  const product =
-    storeProducts.find(
-      product =>
-        String(product.id) ===
-        String(productId)
-    );
-
+  const availableStock =
+    variant
+      ? Number(variant.quantity || 0)
+      : Number(product?.stock || 0);
 
   if (
     amount > 0 &&
-    product &&
-    Number(item.quantity) >=
-    Number(product.stock || 0)
+    Number(item.quantity) >= availableStock
   ) {
-
-    alert(
-      "Only " +
-      product.stock +
-      " piece(s) available."
-    );
-
+    alert("Only " + availableStock + " piece(s) available.");
     return;
-
   }
-
 
   item.quantity =
-    Number(item.quantity || 1) +
-    Number(amount);
+    Number(item.quantity || 1) + Number(amount);
 
-
-  if (
-    item.quantity <= 0
-  ) {
-
-    removeFromCart(productId);
+  if (item.quantity <= 0) {
+    removeFromCart(lineKey);
     return;
-
   }
 
-
   saveCart();
-
 }
 
 
@@ -3416,33 +3383,23 @@ function changeQuantity(
 // REMOVE ONE CART PRODUCT
 // ==========================================
 
-function removeFromCart(
-  productId
-) {
+function removeFromCart(lineKey) {
 
-  const item =
-    cart.find(
-      item =>
-        String(item.id) ===
-        String(productId)
+  const exists =
+    cart.some(item =>
+      cartLineKey(item) === String(lineKey)
     );
 
-
-  if (!item) {
+  if (!exists) {
     return;
   }
 
-
   cart =
-    cart.filter(
-      item =>
-        String(item.id) !==
-        String(productId)
+    cart.filter(item =>
+      cartLineKey(item) !== String(lineKey)
     );
 
-
   saveCart();
-
 }
 
 
@@ -3647,6 +3604,9 @@ window.closeProductDetail =
 
 window.setProductDetailImage =
   setProductDetailImage;
+
+window.addProductDetailToCart =
+  addProductDetailToCart;
 
 window.addWishlistItemToCart =
   addWishlistItemToCart;
