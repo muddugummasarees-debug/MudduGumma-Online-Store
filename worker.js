@@ -5,6 +5,7 @@ const CUSTOMER_SESSION_SECONDS = 30 * 24 * 60 * 60;
 const PASSWORD_ITERATIONS = 100000;
 
 let productMetadataReady = false;
+let orderTrackingReady = false;
 
 export default {
   async fetch(request, env) {
@@ -589,6 +590,7 @@ export default {
         path === "/api/customer/orders" &&
         request.method === "GET"
       ) {
+        await ensureOrderTrackingColumns(env);
         const session =
           await getCustomerSession(
             request,
@@ -614,7 +616,10 @@ export default {
                 items,
                 status,
                 created_at,
-                paid_at
+                paid_at,
+                status_updated_at,
+                delivered_at,
+                tracking_note
               FROM orders
               WHERE customer_id = ?
               ORDER BY created_at DESC
@@ -647,13 +652,157 @@ export default {
                 order.created_at,
 
               paidAt:
-                order.paid_at
+                order.paid_at,
+
+              statusUpdatedAt:
+                order.status_updated_at,
+
+              deliveredAt:
+                order.delivered_at,
+
+              trackingNote:
+                order.tracking_note || ""
             }));
 
         return json({
           orders
         });
       }
+
+      // ==========================================
+      // ADMIN ORDER MANAGEMENT
+      // ==========================================
+
+      if (
+        path === "/api/admin/orders" &&
+        request.method === "GET"
+      ) {
+        if (!(await isAuthed(request, env))) {
+          return json({ error: "Admin login required." }, 401);
+        }
+
+        await ensureOrderTrackingColumns(env);
+
+        const result = await env.DB.prepare(`
+          SELECT
+            id,
+            customer_id,
+            razorpay_order_id,
+            razorpay_payment_id,
+            amount,
+            items,
+            customer,
+            status,
+            created_at,
+            paid_at,
+            status_updated_at,
+            delivered_at,
+            tracking_note
+          FROM orders
+          ORDER BY created_at DESC
+          LIMIT 250
+        `).all();
+
+        return json({
+          orders: (result.results || []).map(order => ({
+            id: order.id,
+            customerId: order.customer_id,
+            razorpayOrderId: order.razorpay_order_id,
+            razorpayPaymentId: order.razorpay_payment_id,
+            amount: Number(order.amount || 0),
+            items: safeJsonArray(order.items),
+            customer: safeJsonObject(order.customer),
+            status: order.status || "created",
+            createdAt: order.created_at,
+            paidAt: order.paid_at,
+            statusUpdatedAt: order.status_updated_at,
+            deliveredAt: order.delivered_at,
+            trackingNote: order.tracking_note || ""
+          }))
+        });
+      }
+
+      const orderStatusMatch =
+        path.match(/^\/api\/admin\/orders\/([^/]+)\/status$/);
+
+      if (
+        orderStatusMatch &&
+        request.method === "POST"
+      ) {
+        if (!(await isAuthed(request, env))) {
+          return json({ error: "Admin login required." }, 401);
+        }
+
+        await ensureOrderTrackingColumns(env);
+
+        const orderId =
+          decodeURIComponent(orderStatusMatch[1]);
+
+        const body = await readJson(request);
+        const status = cleanText(body.status, 50)
+          .toLowerCase()
+          .replace(/\s+/g, "_");
+
+        const allowedStatuses = new Set([
+          "created",
+          "paid",
+          "confirmed",
+          "packed",
+          "shipped",
+          "out_for_delivery",
+          "delivered",
+          "cancelled"
+        ]);
+
+        if (!allowedStatuses.has(status)) {
+          return json({ error: "Invalid order status." }, 400);
+        }
+
+        const trackingNote = cleanText(body.trackingNote, 500);
+        const now = new Date().toISOString();
+        const deliveredAt =
+          status === "delivered" ? now : null;
+
+        const result = await env.DB.prepare(`
+          UPDATE orders
+          SET
+            status = ?,
+            status_updated_at = ?,
+            delivered_at =
+              CASE
+                WHEN ? = 'delivered' THEN ?
+                WHEN status = 'delivered' THEN NULL
+                ELSE delivered_at
+              END,
+            tracking_note = ?
+          WHERE id = ?
+        `)
+          .bind(
+            status,
+            now,
+            status,
+            deliveredAt,
+            trackingNote,
+            orderId
+          )
+          .run();
+
+        if (!result.meta.changes) {
+          return json({ error: "Order not found." }, 404);
+        }
+
+        return json({
+          ok: true,
+          order: {
+            id: orderId,
+            status,
+            statusUpdatedAt: now,
+            deliveredAt,
+            trackingNote
+          }
+        });
+      }
+
       // ==========================================
       // GET PRODUCTS
       // ==========================================
@@ -1768,6 +1917,7 @@ export default {
         await ensureProductMetadataColumns(
           env
         );
+        await ensureOrderTrackingColumns(env);
 
         const statements = [
           env.DB
@@ -1777,7 +1927,8 @@ export default {
               SET
                 status = 'paid',
                 razorpay_payment_id = ?,
-                paid_at = ?
+                paid_at = ?,
+                status_updated_at = ?
 
               WHERE
                 id = ?
@@ -1786,6 +1937,7 @@ export default {
             `)
             .bind(
               paymentId,
+              paidAt,
               paidAt,
               order.id
             )
@@ -2280,6 +2432,75 @@ function safeJsonArray(
   } catch {
 
     return [];
+  }
+}
+
+
+
+// ==========================================
+// ORDER TRACKING SCHEMA
+// ==========================================
+
+async function ensureOrderTrackingColumns(env) {
+  if (orderTrackingReady) {
+    return;
+  }
+
+  const definitions = [
+    ["status_updated_at", "status_updated_at TEXT"],
+    ["delivered_at", "delivered_at TEXT"],
+    ["tracking_note", "tracking_note TEXT NOT NULL DEFAULT ''"]
+  ];
+
+  const schema = await env.DB
+    .prepare("PRAGMA table_info(orders)")
+    .all();
+
+  const columns = new Set(
+    (schema.results || []).map(column => String(column.name))
+  );
+
+  for (const [name, definition] of definitions) {
+    if (columns.has(name)) {
+      continue;
+    }
+
+    try {
+      await env.DB
+        .prepare(`ALTER TABLE orders ADD COLUMN ${definition}`)
+        .run();
+    } catch (error) {
+      const updatedSchema = await env.DB
+        .prepare("PRAGMA table_info(orders)")
+        .all();
+
+      const nowExists = (updatedSchema.results || [])
+        .some(column => String(column.name) === name);
+
+      if (!nowExists) {
+        throw error;
+      }
+    }
+
+    columns.add(name);
+  }
+
+  orderTrackingReady = true;
+}
+
+
+// ==========================================
+// SAFE JSON OBJECT
+// ==========================================
+
+function safeJsonObject(value) {
+  try {
+    const parsed = JSON.parse(value || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : {};
+  } catch {
+    return {};
   }
 }
 

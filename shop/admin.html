@@ -178,6 +178,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--rose);box-shadow:0 0 
 th{color:var(--wine-dark);background:#fff7f7}
 th,td{border-color:rgba(143,64,80,.10)}
 
+
+.order-admin-list{display:grid;gap:16px;margin-top:18px}
+.admin-order-card{border:1px solid var(--line);border-radius:16px;padding:18px;background:#fffaf8}
+.admin-order-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:12px}
+.admin-order-id{font-weight:800;color:var(--wine-dark);overflow-wrap:anywhere}
+.admin-order-meta,.admin-order-customer,.admin-order-items{font-size:13px;color:#6f5d64;line-height:1.55}
+.admin-order-items{margin:12px 0;padding:12px;background:#fff;border:1px solid rgba(143,64,80,.10);border-radius:12px}
+.admin-order-controls{display:grid;grid-template-columns:220px 1fr auto;gap:10px;align-items:end;margin-top:12px}
+.admin-order-controls label{margin:0}
+.admin-order-controls input,.admin-order-controls select{margin-top:6px}
+.order-message{min-height:20px;margin-top:9px;color:var(--wine);font-weight:700;font-size:13px}
+@media(max-width:760px){
+  .admin-order-head{display:block}
+  .admin-order-controls{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 
@@ -209,6 +225,23 @@ th,td{border-color:rgba(143,64,80,.10)}
 
 
 <section id="app" class="hidden">
+
+
+<div class="box">
+  <div class="row" style="justify-content:space-between">
+    <div>
+      <h2 style="margin-bottom:6px">Customer Orders</h2>
+      <div class="muted">
+        Update each order from Paid through Delivered. Customers see the same status in My Account.
+      </div>
+    </div>
+    <button type="button" class="btn alt" onclick="loadOrders()">Refresh Orders</button>
+  </div>
+  <div id="ordersMessage" class="order-message"></div>
+  <div id="adminOrders" class="order-admin-list">
+    <div class="muted">Loading orders...</div>
+  </div>
+</div>
 
 <div class="box">
 
@@ -467,6 +500,7 @@ Add new stock here every day. Changes are saved on the store server.
 
 let editing=null;
 let products=[];
+let orders=[];
 
 const $=id=>document.getElementById(id);
 
@@ -608,6 +642,7 @@ function showApp(){
   $('logout').classList.remove('hidden');
 
   load();
+  loadOrders();
 
 }
 
@@ -718,6 +753,156 @@ function esc(s){
       "'":'&#039;'
     }[m]));
 
+}
+
+
+
+function formatAdminDate(value){
+  if(!value){return '—';}
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+}
+
+
+function formatAdminRupees(value){
+  return '₹'+Number(value||0).toLocaleString('en-IN',{
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
+
+
+function statusLabel(value){
+  const text=String(value||'created').replace(/_/g,' ');
+  return text.charAt(0).toUpperCase()+text.slice(1);
+}
+
+
+async function loadOrders(){
+  $('ordersMessage').textContent='';
+  $('adminOrders').innerHTML='<div class="muted">Loading orders...</div>';
+
+  const response=await fetch('/api/admin/orders');
+  const data=await response.json().catch(()=>({}));
+
+  if(!response.ok){
+    $('adminOrders').innerHTML='';
+    $('ordersMessage').textContent=data.error||'Could not load orders.';
+    return;
+  }
+
+  orders=Array.isArray(data.orders)?data.orders:[];
+
+  if(!orders.length){
+    $('adminOrders').innerHTML='<div class="muted">No customer orders yet.</div>';
+    return;
+  }
+
+  const statuses=[
+    'created',
+    'paid',
+    'confirmed',
+    'packed',
+    'shipped',
+    'out_for_delivery',
+    'delivered',
+    'cancelled'
+  ];
+
+  $('adminOrders').innerHTML=orders.map((order,index)=>{
+    const customer=order.customer||{};
+    const items=Array.isArray(order.items)?order.items:[];
+    const options=statuses.map(status=>
+      '<option value="'+status+'"'+(status===order.status?' selected':'')+'>'+
+        esc(statusLabel(status))+
+      '</option>'
+    ).join('');
+
+    const itemLines=items.length
+      ? items.map(item=>
+          '<div>'+
+            esc(item.name||'Item')+
+            ' × '+Math.max(1,Number(item.quantity||1))+
+            (item.color?' · '+esc(item.color):'')+
+            (item.size?' · '+esc(item.size):'')+
+          '</div>'
+        ).join('')
+      : '<div>No item details available.</div>';
+
+    return `
+      <article class="admin-order-card">
+        <div class="admin-order-head">
+          <div>
+            <div class="admin-order-id">Order #${esc(order.id)}</div>
+            <div class="admin-order-meta">
+              ${formatAdminDate(order.createdAt)} · ${formatAdminRupees(order.amount)}
+            </div>
+          </div>
+          <strong>${esc(statusLabel(order.status))}</strong>
+        </div>
+
+        <div class="admin-order-customer">
+          <strong>${esc(customer.name||'Customer')}</strong><br>
+          ${esc(customer.email||'')}${customer.phone?' · '+esc(customer.phone):''}<br>
+          ${esc([customer.address,customer.city,customer.state,customer.pincode].filter(Boolean).join(', '))}
+        </div>
+
+        <div class="admin-order-items">${itemLines}</div>
+
+        <div class="admin-order-controls" data-order-index="${index}">
+          <label>
+            Order status
+            <select class="admin-order-status">${options}</select>
+          </label>
+          <label>
+            Customer tracking note
+            <input class="admin-order-note" maxlength="500"
+              value="${esc(order.trackingNote||'')}"
+              placeholder="e.g. Shipped via Delhivery, tracking ID 123">
+          </label>
+          <button type="button" class="btn" onclick="saveOrderStatus(${index})">
+            Update Status
+          </button>
+        </div>
+        <div class="order-message" id="orderMessage${index}"></div>
+      </article>
+    `;
+  }).join('');
+}
+
+
+async function saveOrderStatus(index){
+  const order=orders[index];
+  const controls=document.querySelector('[data-order-index="'+index+'"]');
+  const message=$('orderMessage'+index);
+
+  if(!order||!controls){return;}
+
+  const status=controls.querySelector('.admin-order-status').value;
+  const trackingNote=controls.querySelector('.admin-order-note').value.trim();
+
+  message.textContent='Saving...';
+
+  const response=await fetch(
+    '/api/admin/orders/'+encodeURIComponent(order.id)+'/status',
+    {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status,trackingNote})
+    }
+  );
+
+  const data=await response.json().catch(()=>({}));
+
+  if(!response.ok){
+    message.textContent=data.error||'Could not update order.';
+    return;
+  }
+
+  message.textContent='Order updated. The customer can now see '+statusLabel(status)+'.';
+  await loadOrders();
 }
 
 

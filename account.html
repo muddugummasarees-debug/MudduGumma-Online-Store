@@ -398,6 +398,23 @@
     input,select,textarea{background:rgba(255,255,255,.9);border-color:rgba(143,64,80,.17);border-radius:12px}
     input:focus,select:focus,textarea:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(201,120,139,.11);outline:none}
   
+
+    .order-status[data-status="confirmed"],
+    .order-status[data-status="packed"]{background:#fff1cf;color:#8a5a10}
+    .order-status[data-status="shipped"],
+    .order-status[data-status="out_for_delivery"]{background:#e5eefb;color:#285a91}
+    .order-status[data-status="delivered"]{background:#ddf4e6;color:#17643a}
+    .order-status[data-status="cancelled"]{background:#fde4e8;color:#a32840}
+    .order-tracking{margin:12px 0 14px;padding:14px;border-radius:12px;background:#fff;border:1px solid #f0e5e9}
+    .tracking-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:10px}
+    .tracking-step{height:6px;border-radius:999px;background:#eadfe3}
+    .tracking-step.active{background:linear-gradient(90deg,var(--rose),var(--wine))}
+    .tracking-copy{font-size:13px;color:var(--muted);line-height:1.55}
+    .tracking-copy strong{color:var(--text)}
+    @media(max-width:650px){
+      .tracking-steps{grid-template-columns:repeat(3,1fr)}
+    }
+
 </style>
 </head>
 
@@ -744,6 +761,23 @@
   }
 
 
+
+  function orderProgressIndex(value) {
+    const stages = [
+      "paid",
+      "confirmed",
+      "packed",
+      "shipped",
+      "out_for_delivery",
+      "delivered"
+    ];
+    const index = stages.indexOf(
+      String(value || "").toLowerCase()
+    );
+    return index < 0 ? 0 : index;
+  }
+
+
   function showOrdersMessage(text, type) {
     const list =
       document.getElementById("ordersList");
@@ -813,6 +847,64 @@
 
       head.append(details, status);
       card.append(head);
+
+
+      const tracking =
+        document.createElement("div");
+      tracking.className = "order-tracking";
+
+      const steps =
+        document.createElement("div");
+      steps.className = "tracking-steps";
+
+      const currentProgress =
+        orderProgressIndex(order.status);
+
+      for (let stepIndex = 0; stepIndex < 6; stepIndex += 1) {
+        const step = document.createElement("span");
+        step.className =
+          "tracking-step" +
+          (stepIndex <= currentProgress ? " active" : "");
+        steps.append(step);
+      }
+
+      const trackingCopy =
+        document.createElement("div");
+      trackingCopy.className = "tracking-copy";
+
+      const statusLine =
+        document.createElement("strong");
+      statusLine.textContent =
+        String(order.status || "").toLowerCase() === "cancelled"
+          ? "This order was cancelled."
+          : "Current stage: " + orderStatusText(order.status);
+
+      trackingCopy.append(statusLine);
+
+      const relevantDate =
+        order.deliveredAt ||
+        order.statusUpdatedAt ||
+        order.paidAt;
+
+      if (relevantDate) {
+        trackingCopy.append(
+          document.createElement("br"),
+          document.createTextNode(
+            (order.deliveredAt ? "Delivered: " : "Last updated: ") +
+            formatOrderDate(relevantDate)
+          )
+        );
+      }
+
+      if (order.trackingNote) {
+        trackingCopy.append(
+          document.createElement("br"),
+          document.createTextNode(order.trackingNote)
+        );
+      }
+
+      tracking.append(steps, trackingCopy);
+      card.append(tracking);
 
       const itemsWrap =
         document.createElement("div");
