@@ -4363,3 +4363,54 @@ footer{
   .product-card{border-radius:18px}
   .shop-filters{border-radius:19px}
 }
+
+
+/* =====================================================
+   REAL WATERCOLOR FLORAL ARTWORK
+===================================================== */
+.hero{
+  min-height:calc(100vh - 82px);
+  background-image:
+    linear-gradient(90deg,rgba(255,250,246,.93) 0%,rgba(255,250,246,.74) 42%,rgba(255,250,246,.25) 68%,rgba(255,250,246,.10) 100%),
+    url("assets/floral-hero-watercolor.png");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+.hero-copy{
+  position:relative;
+  z-index:2;
+  padding:clamp(18px,3vw,38px);
+  border-radius:30px;
+  background:rgba(255,250,247,.38);
+  backdrop-filter:blur(2px);
+}
+.intro{
+  background-image:
+    linear-gradient(rgba(255,253,251,.88),rgba(255,247,248,.92)),
+    url("assets/floral-hero-watercolor.png");
+  background-size:cover;
+  background-position:center;
+}
+@media(max-width:900px){
+  .hero{
+    min-height:760px;
+    align-content:center;
+    background-image:
+      linear-gradient(180deg,rgba(255,250,246,.82),rgba(255,250,246,.58)),
+      url("assets/floral-hero-watercolor.png");
+    background-position:center top;
+  }
+  .hero-copy{
+    background:rgba(255,250,247,.68);
+    backdrop-filter:blur(4px);
+  }
+}
+@media(max-width:560px){
+  .hero{
+    min-height:690px;
+    padding-top:70px;
+    padding-bottom:70px;
+  }
+  .hero-copy{padding:24px 18px;border-radius:22px}
+}
