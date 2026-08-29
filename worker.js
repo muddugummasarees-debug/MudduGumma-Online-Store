@@ -3183,10 +3183,9 @@ function findVerifiedPhone(value) {
       return "";
     }
 
-    if (typeof item !== "object") {
-      return "";
-    }
-
+  if (typeof item !== "object") {
+  return normalizeIndianPhone(item);
+}
     for (const [key, entry] of Object.entries(item)) {
       if (phoneKeys.has(key.toLowerCase())) {
         const phone = normalizeIndianPhone(entry);
