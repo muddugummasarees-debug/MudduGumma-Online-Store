@@ -4266,18 +4266,6 @@ nav a:hover{color:var(--wine)}
     linear-gradient(135deg,#fffaf4 0%,#fae8ed 52%,#f4e7e2 100%);
   border-bottom:1px solid rgba(143,64,80,.10);
 }
-.hero:before,
-.hero:after{
-  content:"✿";
-  position:absolute;
-  z-index:-1;
-  color:rgba(143,64,80,.075);
-  font-family:Georgia,serif;
-  line-height:1;
-  pointer-events:none;
-}
-.hero:before{font-size:min(34vw,430px);left:-7%;top:-12%;transform:rotate(-15deg)}
-.hero:after{font-size:min(28vw,360px);right:-5%;bottom:-17%;color:rgba(154,167,140,.10);transform:rotate(17deg)}
 h1,h2{color:var(--wine-dark);letter-spacing:-.025em}
 h1 em,h2 em,h2 span{color:var(--rose)}
 .eyebrow,.section-label{color:var(--gold)}
@@ -4372,8 +4360,6 @@ footer{
   background:linear-gradient(180deg,#fffdfb,#fff6f7);
 }
 @media(max-width:768px){
-  .hero:before{font-size:210px;left:-75px;top:-45px}
-  .hero:after{font-size:185px;right:-65px;bottom:-55px}
   .product-card{border-radius:18px}
   .shop-filters{border-radius:19px}
 }
