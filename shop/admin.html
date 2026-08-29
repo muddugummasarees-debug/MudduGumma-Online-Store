@@ -145,8 +145,21 @@ img.thumb{
   border-radius:7px;
   border:1px solid #ddd
 }
+.inventory-help{margin-top:6px;line-height:1.45}
+.variant-builder{margin:18px 0 4px;padding:18px;border:1px solid #eadde2;border-radius:10px;background:#fff8fa}
+.variant-builder h3{margin:0 0 6px;color:var(--wine)}
+.variant-head,.variant-row{display:grid;grid-template-columns:1fr 1fr 120px 44px;gap:10px;align-items:end}
+.variant-head{margin-top:16px;color:#75656d;font-size:12px;font-weight:800;text-transform:uppercase}
+.variant-head span{padding:0 4px}
+.variant-row{margin-top:9px}
+.variant-row input{margin:0}
+.variant-remove{width:44px;height:44px;padding:0;border:1px solid #e2cbd4;border-radius:7px;background:#fff;color:#9b234e;font-size:21px;cursor:pointer}
+.variant-footer{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.variant-total{color:var(--wine);font-weight:700}
 @media(max-width:700px){
   .grid{grid-template-columns:1fr}
+  .variant-head{display:none}
+  .variant-row{grid-template-columns:1fr 1fr 82px 44px}
   table{font-size:13px}
 }
 </style>
@@ -253,17 +266,29 @@ img.thumb{
 </div>
 
 <div>
-  <label>Stock</label>
+  <label>Stock setup *</label>
+  <select id="inventoryMode">
+    <option value="simple" selected>Single / Free Size stock</option>
+    <option value="variants">Size &amp; Color stock</option>
+  </select>
+  <div class="muted inventory-help">
+    Use Single / Free Size for most sarees. Use Size &amp; Color for dresses,
+    kurtis, blouses and other products with separate quantities.
+  </div>
+</div>
+
+<div id="simpleStockField">
+  <label>Total stock</label>
   <input id="stock" type="number" min="0" value="0">
 </div>
 
-<div>
-  <label>Sizes (comma separated)</label>
-  <input id="sizes" placeholder="S, M, L, XL">
+<div id="simpleSizesField">
+  <label>Sizes (optional, comma separated)</label>
+  <input id="sizes" placeholder="Free Size">
 </div>
 
-<div>
-  <label>Colors (comma separated)</label>
+<div id="simpleColorsField">
+  <label>Colors (optional, comma separated)</label>
   <input id="colors" placeholder="Pink, Blue, Black">
 </div>
 
@@ -333,6 +358,27 @@ img.thumb{
 </div>
 
 </div>
+
+<div id="variantInventory" class="variant-builder hidden">
+  <h3>Stock by size and color</h3>
+  <div class="muted">
+    Add one row for every available choice. Example: Pink + S + 10,
+    then Pink + M + 14. Total stock is calculated automatically.
+  </div>
+  <div class="variant-head" aria-hidden="true">
+    <span>Color</span><span>Size</span><span>Quantity</span><span></span>
+  </div>
+  <div id="variantRows"></div>
+  <div class="variant-footer">
+    <button type="button" class="btn alt" onclick="addVariantRow()">+ Add size / color</button>
+    <div class="variant-total">Total stock: <strong id="variantTotal">0</strong></div>
+  </div>
+</div>
+
+<datalist id="sizeOptions">
+  <option value="Free Size"><option value="XS"><option value="S"><option value="M">
+  <option value="L"><option value="XL"><option value="XXL"><option value="3XL">
+</datalist>
 
 <label class="checkbox-line">
   <input id="featured" type="checkbox">
@@ -449,6 +495,82 @@ $('category').addEventListener(
   'change',
   ()=>updateCustomFabricField(true)
 );
+
+
+function addVariantRow(value={}){
+
+  const row=document.createElement('div');
+  row.className='variant-row';
+
+  row.innerHTML=`
+    <input class="variant-color" maxlength="60" placeholder="Color, e.g. Pink" aria-label="Variant color">
+    <input class="variant-size" list="sizeOptions" maxlength="40" placeholder="Size, e.g. S" aria-label="Variant size">
+    <input class="variant-quantity" type="number" min="0" step="1" value="0" aria-label="Variant quantity">
+    <button type="button" class="variant-remove" title="Remove this row" aria-label="Remove this stock row">×</button>
+  `;
+
+  row.querySelector('.variant-color').value=String(value.color||'');
+  row.querySelector('.variant-size').value=String(value.size||'');
+  row.querySelector('.variant-quantity').value=Math.max(0,Math.floor(Number(value.quantity)||0));
+
+  row.querySelector('.variant-remove').addEventListener('click',()=>{
+    row.remove();
+    updateVariantTotal();
+  });
+
+  row.querySelectorAll('input').forEach(input=>{
+    input.addEventListener('input',updateVariantTotal);
+  });
+
+  $('variantRows').appendChild(row);
+  updateVariantTotal();
+}
+
+
+function readVariantRows(){
+
+  return [...document.querySelectorAll('.variant-row')]
+    .map(row=>({
+      color:row.querySelector('.variant-color').value.trim(),
+      size:row.querySelector('.variant-size').value.trim(),
+      quantity:Math.max(0,Math.floor(Number(row.querySelector('.variant-quantity').value)||0))
+    }))
+    .filter(item=>item.color||item.size);
+
+}
+
+
+function updateVariantTotal(){
+  const total=readVariantRows().reduce((sum,item)=>sum+item.quantity,0);
+  $('variantTotal').textContent=total;
+}
+
+
+function updateInventoryMode(){
+
+  const usesVariants=$('inventoryMode').value==='variants';
+  $('variantInventory').classList.toggle('hidden',!usesVariants);
+
+  ['simpleStockField','simpleSizesField','simpleColorsField'].forEach(id=>{
+    $(id).classList.toggle('hidden',usesVariants);
+  });
+
+  if(usesVariants && !$('variantRows').children.length){
+    addVariantRow();
+  }
+
+  updateVariantTotal();
+}
+
+
+$('inventoryMode').addEventListener('change',updateInventoryMode);
+
+
+$('productType').addEventListener('change',()=>{
+  if(editing){return;}
+  $('inventoryMode').value=$('productType').value==='Sarees'?'simple':'variants';
+  updateInventoryMode();
+});
 
 
 async function check(){
@@ -615,15 +737,25 @@ function edit(id){
 
   updateCustomFabricField();
 
+  $('productType').value=p.category||'Sarees';
+
   $('price').value=p.price;
   $('oldPrice').value=p.oldPrice||'';
   $('stock').value=p.stock;
 
-  $('sizes').value=
-    (p.sizes||[]).join(', ');
+  $('sizes').value=(p.sizes||[]).join(', ');
+  $('colors').value=(p.colors||[]).join(', ');
 
-  $('colors').value=
-    (p.colors||[]).join(', ');
+  $('variantRows').replaceChildren();
+
+  if(Array.isArray(p.variants) && p.variants.length){
+    $('inventoryMode').value='variants';
+    p.variants.forEach(addVariantRow);
+  }else{
+    $('inventoryMode').value='simple';
+  }
+
+  updateInventoryMode();
 
   $('occasion').value=
     p.occasion||'';
@@ -748,6 +880,28 @@ async function saveProduct(){
     return;
   }
 
+  const variants=readVariantRows();
+
+  if($('inventoryMode').value==='variants' && !variants.length){
+    $('msg').textContent='Please add at least one size or color stock row.';
+    return;
+  }
+
+  const variantNames=new Set();
+
+  for(const item of variants){
+    const identity=(item.color+'|'+item.size).trim().toLowerCase();
+
+    if(variantNames.has(identity)){
+      $('msg').textContent='Each size and color combination can be added only once.';
+      return;
+    }
+
+    variantNames.add(identity);
+  }
+
+  const variantStock=variants.reduce((sum,item)=>sum+item.quantity,0);
+
   const files=[...$('imageFile').files];
 
   const old=
@@ -869,21 +1023,22 @@ async function saveProduct(){
       )||0,
 
     stock:
-      Number(
-        $('stock').value
-      )||0,
+      $('inventoryMode').value==='variants'
+        ? variantStock
+        : Number($('stock').value)||0,
 
     sizes:
-      $('sizes').value
-        .split(',')
-        .map(x=>x.trim())
-        .filter(Boolean),
+      $('inventoryMode').value==='variants'
+        ? [...new Set(variants.map(item=>item.size).filter(Boolean))]
+        : $('sizes').value.split(',').map(x=>x.trim()).filter(Boolean),
 
     colors:
-      $('colors').value
-        .split(',')
-        .map(x=>x.trim())
-        .filter(Boolean),
+      $('inventoryMode').value==='variants'
+        ? [...new Set(variants.map(item=>item.color).filter(Boolean))]
+        : $('colors').value.split(',').map(x=>x.trim()).filter(Boolean),
+
+    variants:
+      $('inventoryMode').value==='variants'?variants:[],
 
     description:
       $('description').value,
@@ -963,6 +1118,9 @@ function resetForm(){
   $('productType').value='Sarees';
   $('category').value='';
   $('featured').checked=false;
+  $('inventoryMode').value='simple';
+  $('variantRows').replaceChildren();
+  updateInventoryMode();
   updateCustomFabricField();
 
   $('imagePreview').innerHTML='';
