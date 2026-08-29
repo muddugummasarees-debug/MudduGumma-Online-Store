@@ -4371,8 +4371,8 @@ footer{
 .hero{
   min-height:calc(100vh - 82px);
   background-image:
-    linear-gradient(90deg,rgba(255,250,246,.93) 0%,rgba(255,250,246,.74) 42%,rgba(255,250,246,.25) 68%,rgba(255,250,246,.10) 100%),
-    url("assets/floral-hero-watercolor.png");
+    linear-gradient(90deg,rgba(255,250,246,.76) 0%,rgba(255,250,246,.48) 42%,rgba(255,250,246,.08) 68%,rgba(255,250,246,0) 100%),
+    url("/assets/floral-hero-watercolor.jpg?v=3");
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -4388,7 +4388,7 @@ footer{
 .intro{
   background-image:
     linear-gradient(rgba(255,253,251,.88),rgba(255,247,248,.92)),
-    url("assets/floral-hero-watercolor.png");
+    url("/assets/floral-hero-watercolor.jpg?v=3");
   background-size:cover;
   background-position:center;
 }
@@ -4397,8 +4397,8 @@ footer{
     min-height:760px;
     align-content:center;
     background-image:
-      linear-gradient(180deg,rgba(255,250,246,.82),rgba(255,250,246,.58)),
-      url("assets/floral-hero-watercolor.png");
+      linear-gradient(180deg,rgba(255,250,246,.56),rgba(255,250,246,.30)),
+      url("/assets/floral-hero-watercolor.jpg?v=3");
     background-position:center top;
   }
   .hero-copy{
@@ -4414,3 +4414,5 @@ footer{
   }
   .hero-copy{padding:24px 18px;border-radius:22px}
 }
+
+.hero{background-image:linear-gradient(90deg,rgba(255,250,246,.76) 0%,rgba(255,250,246,.48) 42%,rgba(255,250,246,.08) 68%,rgba(255,250,246,0) 100%),url("/assets/floral-hero-watercolor.jpg?v=3")!important}
