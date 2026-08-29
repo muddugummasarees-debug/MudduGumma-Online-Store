@@ -679,6 +679,7 @@ export default {
               work_type,
               blouse_piece,
               featured,
+              variants,
               price,
               old_price,
               stock,
@@ -779,6 +780,30 @@ export default {
           legacyCategory ||
           "Other Sarees";
 
+        const variants =
+          normalizeProductVariants(
+            body.variants
+          );
+
+        const variantStock =
+          variants.reduce(
+            (total, variant) =>
+              total + variant.quantity,
+            0
+          );
+
+        const requestedSizes =
+          normalizeStringArray(body.sizes);
+
+        const requestedColors =
+          normalizeStringArray(body.colors);
+
+        const variantSizes =
+          variants.map(variant => variant.size).filter(Boolean);
+
+        const variantColors =
+          variants.map(variant => variant.color).filter(Boolean);
+
         const product = {
           id:
             cleanText(
@@ -850,24 +875,22 @@ export default {
             ),
 
           stock:
-            Math.max(
-              0,
-              Math.floor(
-                Number(
-                  body.stock
-                ) || 0
-              )
-            ),
+            variants.length
+              ? variantStock
+              : Math.max(
+                  0,
+                  Math.floor(
+                    Number(body.stock) || 0
+                  )
+                ),
 
           sizes:
-            normalizeStringArray(
-              body.sizes
-            ),
+            [...new Set([...requestedSizes, ...variantSizes])],
 
           colors:
-            normalizeStringArray(
-              body.colors
-            ),
+            [...new Set([...requestedColors, ...variantColors])],
+
+          variants,
 
           images,
 
@@ -897,6 +920,7 @@ export default {
               stock,
               sizes,
               colors,
+              variants,
               images,
               image,
               description,
@@ -913,7 +937,7 @@ export default {
             VALUES (
               ?, ?, ?, ?, ?, ?, ?, ?,
               ?, ?, ?, ?, ?, ?, ?, ?,
-              ?, ?, ?, ?
+              ?, ?, ?, ?, ?
             )
 
             ON CONFLICT(id)
@@ -942,6 +966,9 @@ export default {
 
               colors =
                 excluded.colors,
+
+              variants =
+                excluded.variants,
 
               images =
                 excluded.images,
@@ -986,6 +1013,9 @@ export default {
             ),
             JSON.stringify(
               product.colors
+            ),
+            JSON.stringify(
+              product.variants
             ),
             JSON.stringify(
               product.images
@@ -1255,6 +1285,11 @@ export default {
 
         const loggedInCustomer =
           customerSession.customer;
+
+        await ensureProductMetadataColumns(
+          env
+        );
+
         if (
           !env.RAZORPAY_KEY_ID ||
           !env.RAZORPAY_KEY_SECRET
@@ -1307,7 +1342,8 @@ export default {
                   id,
                   name,
                   price,
-                  stock
+                  stock,
+                  variants
                 FROM products
                 WHERE id = ?
               `)
@@ -1334,13 +1370,44 @@ export default {
               )
             );
 
-          const stock =
+          const productVariants =
+            normalizeProductVariants(
+              row.variants
+            );
+
+          let selectedVariant = null;
+
+          let stock =
             Math.max(
               0,
-              Number(
-                row.stock
-              ) || 0
+              Number(row.stock) || 0
             );
+
+          if (productVariants.length) {
+            const requestedVariantKey =
+              cleanText(
+                cartItem.variantKey,
+                200
+              );
+
+            selectedVariant =
+              productVariants.find(
+                variant =>
+                  variant.key === requestedVariantKey
+              ) || null;
+
+            if (!selectedVariant) {
+              return json(
+                {
+                  error:
+                    `Please choose an available size and color for ${row.name}.`
+                },
+                400
+              );
+            }
+
+            stock = selectedVariant.quantity;
+          }
 
           if (
             quantity > stock
@@ -1374,7 +1441,22 @@ export default {
 
             price,
 
-            quantity
+            quantity,
+
+            variantKey:
+              selectedVariant
+                ? selectedVariant.key
+                : "",
+
+            color:
+              selectedVariant
+                ? selectedVariant.color
+                : "",
+
+            size:
+              selectedVariant
+                ? selectedVariant.size
+                : ""
           });
         }
 
@@ -1683,6 +1765,10 @@ export default {
           new Date()
             .toISOString();
 
+        await ensureProductMetadataColumns(
+          env
+        );
+
         const statements = [
           env.DB
             .prepare(`
@@ -1705,42 +1791,122 @@ export default {
             )
         ];
 
-        for (
-          const item
-          of items
-        ) {
-          statements.push(
+        const itemsByProduct = new Map();
 
+        for (const item of items) {
+          const productId = cleanText(item.id, 150);
+
+          if (!productId) {
+            continue;
+          }
+
+          if (!itemsByProduct.has(productId)) {
+            itemsByProduct.set(productId, []);
+          }
+
+          itemsByProduct.get(productId).push(item);
+        }
+
+        for (const [productId, productItems] of itemsByProduct) {
+          const productRow =
+            await env.DB
+              .prepare(`
+                SELECT
+                  stock,
+                  variants
+                FROM products
+                WHERE id = ?
+              `)
+              .bind(productId)
+              .first();
+
+          if (!productRow) {
+            continue;
+          }
+
+          const variants =
+            normalizeProductVariants(
+              productRow.variants
+            );
+
+          if (variants.length) {
+            for (const item of productItems) {
+              const variantKey =
+                cleanText(item.variantKey, 200);
+
+              const variant =
+                variants.find(
+                  candidate =>
+                    candidate.key === variantKey
+                );
+
+              if (!variant) {
+                continue;
+              }
+
+              variant.quantity =
+                Math.max(
+                  0,
+                  variant.quantity -
+                  Math.max(
+                    1,
+                    Math.floor(Number(item.quantity) || 1)
+                  )
+                );
+            }
+
+            const stock =
+              variants.reduce(
+                (total, variant) =>
+                  total + variant.quantity,
+                0
+              );
+
+            statements.push(
+              env.DB
+                .prepare(`
+                  UPDATE products
+                  SET
+                    variants = ?,
+                    stock = ?,
+                    updated_at = ?
+                  WHERE id = ?
+                `)
+                .bind(
+                  JSON.stringify(variants),
+                  stock,
+                  paidAt,
+                  productId
+                )
+            );
+
+            continue;
+          }
+
+          const quantity =
+            productItems.reduce(
+              (total, item) =>
+                total +
+                Math.max(
+                  1,
+                  Math.floor(Number(item.quantity) || 1)
+                ),
+              0
+            );
+
+          statements.push(
             env.DB
               .prepare(`
                 UPDATE products
-
                 SET
-                  stock =
-                    MAX(
-                      stock - ?,
-                      0
-                    ),
-
+                  stock = MAX(stock - ?, 0),
                   updated_at = ?
-
                 WHERE id = ?
               `)
               .bind(
-                Math.max(
-                  1,
-                  Math.floor(
-                    Number(
-                      item.quantity
-                    ) || 1
-                  )
-                ),
-
+                quantity,
                 paidAt,
-
-                String(
-                  item.id
-                )
+                productId
               )
           );
         }
@@ -1769,10 +1935,19 @@ export default {
 
             const itemLines =
               items
-                .map(
-                  item =>
-                    `${item.name} - Qty: ${item.quantity} - ₹${item.price}`
-                )
+                .map(item => {
+                  const variant =
+                    [item.color, item.size]
+                      .filter(Boolean)
+                      .join(" / ");
+
+                  return (
+                    String(item.name || "Item") +
+                    (variant ? " (" + variant + ")" : "") +
+                    " - Qty: " + item.quantity +
+                    " - ₹" + item.price
+                  );
+                })
                 .join("\n");
 
             const emailText =
@@ -2025,6 +2200,63 @@ function normalizeStringArray(
 
 
 // ==========================================
+// PRODUCT STOCK VARIANTS
+// ==========================================
+
+function productVariantKey(
+  color,
+  size
+) {
+  return [
+    cleanText(color, 60).toLowerCase(),
+    cleanText(size, 40).toLowerCase()
+  ]
+    .map(value => encodeURIComponent(value))
+    .join("::");
+}
+
+
+function normalizeProductVariants(
+  value
+) {
+  const source =
+    Array.isArray(value)
+      ? value
+      : safeJsonArray(value);
+
+  const variants = new Map();
+
+  for (const item of source) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const color = cleanText(item.color, 60);
+    const size = cleanText(item.size, 40);
+
+    if (!color && !size) {
+      continue;
+    }
+
+    const key = productVariantKey(color, size);
+
+    variants.set(key, {
+      key,
+      color,
+      size,
+      quantity:
+        Math.max(
+          0,
+          Math.floor(Number(item.quantity) || 0)
+        )
+    });
+  }
+
+  return [...variants.values()];
+}
+
+
+// ==========================================
 // SAFE JSON ARRAY
 // ==========================================
 
@@ -2091,6 +2323,10 @@ async function ensureProductMetadataColumns(
     [
       "featured",
       "featured INTEGER NOT NULL DEFAULT 0"
+    ],
+    [
+      "variants",
+      "variants TEXT NOT NULL DEFAULT '[]'"
     ]
   ];
 
@@ -2228,6 +2464,11 @@ function productFromRow(
     colors:
       safeJsonArray(
         row.colors
+      ),
+
+    variants:
+      normalizeProductVariants(
+        row.variants
       ),
 
     images,
