@@ -2534,6 +2534,48 @@ footer{
   color:#a32b3f;
 }
 
+.product-variant-picker{
+  margin-top:20px;
+  padding:16px;
+  border:1px solid #eadde2;
+  border-radius:12px;
+  background:#fff8fa;
+}
+
+.product-variant-picker label{
+  display:block;
+  margin-bottom:8px;
+  color:#49313d;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.product-variant-picker select{
+  width:100%;
+  min-height:46px;
+  border:1px solid #dcc7cf;
+  border-radius:9px;
+  padding:10px 12px;
+  background:#fff;
+  color:#39212c;
+  font:inherit;
+}
+
+.product-variant-picker select:focus{
+  outline:2px solid rgba(109,23,60,.18);
+  border-color:var(--wine);
+}
+
+.product-variant-message{
+  min-height:18px;
+  margin-top:7px;
+  color:#a32b3f;
+  font-size:12px;
+  font-weight:700;
+}
+
 .product-detail-option,
 .product-detail-description{
   margin-top:20px;
@@ -2748,6 +2790,17 @@ footer{
   color:var(--wine);
   font-weight:700;
   font-size:14px;
+}
+
+.cart-item-info > .cart-item-variant{
+  display:inline-flex;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#f7ebf0;
+  color:#6d173c;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.3;
 }
 
 
