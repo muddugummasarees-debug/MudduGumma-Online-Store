@@ -158,6 +158,146 @@ export default {
       }
 
       // ==========================================
+      // CUSTOMER SMS OTP CONFIG
+      // ==========================================
+
+      if (
+        path === "/api/customer/otp-config" &&
+        request.method === "GET"
+      ) {
+        if (
+          !env.MSG91_WIDGET_ID ||
+          !env.MSG91_TOKEN_AUTH ||
+          !env.MSG91_AUTH_KEY
+        ) {
+          return json(
+            {
+              error:
+                "SMS OTP is not configured yet."
+            },
+            503
+          );
+        }
+
+        return json({
+          widgetId:
+            String(env.MSG91_WIDGET_ID),
+          tokenAuth:
+            String(env.MSG91_TOKEN_AUTH)
+        });
+      }
+
+      // ==========================================
+      // CUSTOMER SMS OTP LOGIN
+      // ==========================================
+
+      if (
+        path === "/api/customer/otp-login" &&
+        request.method === "POST"
+      ) {
+        const body = await readJson(request);
+        const phone = normalizeIndianPhone(body.phone);
+        const accessToken = String(body.accessToken || "").trim();
+
+        if (!phone || !accessToken) {
+          return json(
+            { error: "Mobile number and verified OTP token are required." },
+            400
+          );
+        }
+
+        if (!env.MSG91_AUTH_KEY) {
+          return json(
+            { error: "SMS OTP verification is not configured." },
+            503
+          );
+        }
+
+        const verification =
+          await verifyMsg91AccessToken(
+            accessToken,
+            env.MSG91_AUTH_KEY
+          );
+
+        if (!verification.ok) {
+          return json(
+            { error: verification.error || "OTP verification failed." },
+            401
+          );
+        }
+
+        const verifiedPhone =
+          findVerifiedPhone(verification.data);
+
+        if (!verifiedPhone || verifiedPhone !== phone) {
+          return json(
+            { error: "The verified mobile number does not match." },
+            401
+          );
+        }
+
+        const account = await env.DB
+          .prepare(`
+            SELECT id, name, email, phone
+            FROM customer_accounts
+            WHERE phone = ?
+          `)
+          .bind(phone)
+          .first();
+
+        if (!account) {
+          return json(
+            {
+              error:
+                "No account exists with this mobile number. Please create an account first."
+            },
+            404
+          );
+        }
+
+        const sessionToken = randomHex(32);
+        const tokenHash = await digestHex("SHA-256", sessionToken);
+        const now = new Date().toISOString();
+        const expiresAt = new Date(
+          Date.now() + CUSTOMER_SESSION_SECONDS * 1000
+        ).toISOString();
+
+        await env.DB
+          .prepare(`
+            INSERT INTO customer_sessions (
+              token_hash,
+              customer_id,
+              expires_at,
+              created_at
+            )
+            VALUES (?, ?, ?, ?)
+          `)
+          .bind(
+            tokenHash,
+            account.id,
+            expiresAt,
+            now
+          )
+          .run();
+
+        return json(
+          {
+            ok: true,
+            customer: {
+              id: Number(account.id),
+              name: account.name,
+              email: account.email,
+              phone: account.phone
+            }
+          },
+          200,
+          {
+            "Set-Cookie": customerSessionCookie(sessionToken)
+          }
+        );
+      }
+
+      // ==========================================
       // CUSTOMER REGISTER
       // ==========================================
 
@@ -3006,6 +3146,107 @@ async function getCustomerSession(
 }
 
 
+function normalizeIndianPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+
+  if (/^[6-9][0-9]{9}$/.test(digits)) {
+    return digits;
+  }
+
+  if (/^91[6-9][0-9]{9}$/.test(digits)) {
+    return digits.slice(2);
+  }
+
+  return "";
+}
+
+
+function findVerifiedPhone(value) {
+  const phoneKeys = new Set([
+    "identifier",
+    "mobile",
+    "mobile_number",
+    "phone",
+    "phone_number"
+  ]);
+
+  function search(item, depth = 0) {
+    if (!item || depth > 5) {
+      return "";
+    }
+
+    if (Array.isArray(item)) {
+      for (const entry of item) {
+        const found = search(entry, depth + 1);
+        if (found) return found;
+      }
+      return "";
+    }
+
+    if (typeof item !== "object") {
+      return "";
+    }
+
+    for (const [key, entry] of Object.entries(item)) {
+      if (phoneKeys.has(key.toLowerCase())) {
+        const phone = normalizeIndianPhone(entry);
+        if (phone) return phone;
+      }
+    }
+
+    for (const entry of Object.values(item)) {
+      const found = search(entry, depth + 1);
+      if (found) return found;
+    }
+
+    return "";
+  }
+
+  return search(value);
+}
+
+
+async function verifyMsg91AccessToken(accessToken, authKey) {
+  try {
+    const form = new URLSearchParams();
+    form.set("authkey", String(authKey));
+    form.set("access-token", accessToken);
+
+    const response = await fetch(
+      "https://control.msg91.com/api/v5/widget/verifyAccessToken",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: form.toString()
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+    const success =
+      response.ok &&
+      String(data.type || data.status || "").toLowerCase() === "success";
+
+    return {
+      ok: success,
+      data,
+      error: success
+        ? ""
+        : cleanText(data.message || data.error, 300) ||
+          "OTP verification failed."
+    };
+  } catch (error) {
+    console.error("MSG91 token verification failed", error);
+    return {
+      ok: false,
+      data: null,
+      error: "Could not verify OTP right now. Please try again."
+    };
+  }
+}
+
+
 // ==========================================
 // ADMIN AUTH
 // ==========================================
@@ -3187,3 +3428,4 @@ function bytesToHex(
     )
     .join("");
 }
+
