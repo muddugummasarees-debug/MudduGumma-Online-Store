@@ -831,9 +831,22 @@
               1,
               Number(orderItem.quantity || 1)
             );
+          const variantText =
+            [
+              orderItem.color
+                ? "Color: " + orderItem.color
+                : "",
+              orderItem.size
+                ? "Size: " + orderItem.size
+                : ""
+            ]
+              .filter(Boolean)
+              .join(" · ");
+
           name.textContent =
             String(orderItem.name || "Item") +
-            " × " + quantity;
+            " × " + quantity +
+            (variantText ? " — " + variantText : "");
 
           const price =
             document.createElement("strong");
