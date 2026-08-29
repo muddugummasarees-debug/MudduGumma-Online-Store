@@ -386,7 +386,19 @@
         width:100%;
       }
     }
-  </style>
+  
+    /* Premium pastel boutique theme */
+    :root{--wine:#8f4050;--wine-dark:#6f2e3c;--text:#43343a;--muted:#7e6c73;--line:rgba(143,64,80,.15);--bg:#fff7f6;--card:#fffdfb;--rose:#c9788b;--sage:#9aa78c;--gold:#b58a52}
+    body{font-family:Montserrat,Arial,sans-serif;background:radial-gradient(circle at 84% 8%,rgba(154,167,140,.14),transparent 27%),radial-gradient(circle at 7% 86%,rgba(201,120,139,.13),transparent 29%),linear-gradient(135deg,#fffaf5,#fff1f4)}
+    header{background:rgba(255,250,247,.94);border-color:var(--line);box-shadow:0 10px 35px rgba(82,48,58,.05);backdrop-filter:blur(12px)}
+    .brand,.back,.account-top h1{color:var(--wine-dark)}
+    .account-card{background:rgba(255,253,251,.94);border-color:var(--line);border-radius:28px;box-shadow:0 24px 70px rgba(82,48,58,.11)}
+    .tab-button{border-color:rgba(143,64,80,.18);color:var(--wine);background:#fffaf9}
+    .tab-button.active,.primary-button,button[type="submit"]{background:linear-gradient(135deg,var(--rose),var(--wine));border-color:transparent;box-shadow:0 10px 24px rgba(143,64,80,.16)}
+    input,select,textarea{background:rgba(255,255,255,.9);border-color:rgba(143,64,80,.17);border-radius:12px}
+    input:focus,select:focus,textarea:focus{border-color:var(--rose);box-shadow:0 0 0 4px rgba(201,120,139,.11);outline:none}
+  
+</style>
 </head>
 
 <body>
