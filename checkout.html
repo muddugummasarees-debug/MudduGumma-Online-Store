@@ -450,6 +450,14 @@ function renderOrder(){
         ) ||
         "";
 
+      const variantText =
+        [
+          item.color ? "Color: " + item.color : "",
+          item.size ? "Size: " + item.size : ""
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
 
       return `
 
@@ -469,6 +477,12 @@ function renderOrder(){
                 "MudduGumma Product"
               )}
             </h3>
+
+            ${
+              variantText
+                ? `<div style="margin:5px 0;color:#7a5968;font-size:13px;">${escapeHTML(variantText)}</div>`
+                : ""
+            }
 
             <div>
               Qty: ${qty}
@@ -676,7 +690,11 @@ async function continuePayment(){
                           item.quantity ||
                           item.qty ||
                           1
-                        )
+                        ),
+
+                      variantKey:item.variantKey || "",
+                      color:item.color || "",
+                      size:item.size || ""
 
                     };
 
