@@ -2185,43 +2185,26 @@ function renderCollectionShowcases() {
   const colourGrid = document.getElementById("colourShowcaseGrid");
 
   if (fabricGrid) {
-    fabricGrid.innerHTML = showcaseFabrics.map((fabric, index) => {
-      const product = showcaseProductForFabric(fabric.id, index);
-      const image = showcaseProductImage(product);
-      return `
-        <button type="button" class="fabric-tile" onclick="openShowcaseFabric('${fabric.id}')" aria-label="Shop ${escapeAttribute(fabric.label)} sarees">
-          <span class="fabric-tile-visual">
-            ${image
-              ? `<img src="${escapeAttribute(image)}" alt="${escapeAttribute(fabric.label)} sarees" loading="lazy">`
-              : `<span class="saree-category-placeholder">${escapeHTML(fabric.label)}</span>`
-            }
-            <span class="fabric-tile-copy">
-              <strong>${escapeHTML(fabric.label)}</strong>
-              <small>Explore Collection</small>
-            </span>
+    fabricGrid.innerHTML = showcaseFabrics.map((fabric, index) => `
+      <button type="button" class="fabric-tile" onclick="openShowcaseFabric('${fabric.id}')" aria-label="Shop ${escapeAttribute(fabric.label)} sarees">
+        <span class="fabric-tile-visual" style="--showcase-index:${index}">
+          <span class="fabric-tile-copy">
+            <strong>${escapeHTML(fabric.label)}</strong>
+            <small>Explore Collection</small>
           </span>
-        </button>
-      `;
-    }).join("");
+        </span>
+      </button>
+    `).join("");
   }
 
   if (colourGrid) {
-    colourGrid.innerHTML = showcaseColours.map((colour, index) => {
-      const product = showcaseProductForColour(colour.key, index);
-      const image = showcaseProductImage(product);
-      return `
-        <button type="button" class="colour-tile" style="--tile-accent:${colour.accent}" onclick="openShowcaseColour('${colour.key}')" aria-label="Shop ${escapeAttribute(colour.label)} sarees">
-          <span class="colour-tile-visual">
-            ${image
-              ? `<img src="${escapeAttribute(image)}" alt="${escapeAttribute(colour.label)} sarees" loading="lazy">`
-              : `<span class="saree-category-placeholder">${escapeHTML(colour.label)}</span>`
-            }
-          </span>
-          <strong>${escapeHTML(colour.label)}</strong>
-          <small>Shop this colour</small>
-        </button>
-      `;
-    }).join("");
+    colourGrid.innerHTML = showcaseColours.map((colour, index) => `
+      <button type="button" class="colour-tile" style="--tile-accent:${colour.accent};--showcase-index:${index}" onclick="openShowcaseColour('${colour.key}')" aria-label="Shop ${escapeAttribute(colour.label)} sarees">
+        <span class="colour-tile-visual"></span>
+        <strong>${escapeHTML(colour.label)}</strong>
+        <small>Shop this colour</small>
+      </button>
+    `).join("");
   }
 }
 
