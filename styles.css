@@ -5360,3 +5360,43 @@ footer{
   .fabric-tile,.colour-tile{flex:0 0 64vw;scroll-snap-align:start}
   .colour-tile{flex-basis:52vw}
 }
+
+
+/* Distinct reference-matched showcase portraits */
+.fabric-tile-visual,
+.colour-tile-visual{
+  display:block;
+  background-repeat:no-repeat;
+  background-size:500% 100%;
+  background-position:calc(var(--showcase-index,0) * 25%) center;
+}
+.fabric-tile-visual{
+  background-image:url("assets/fabric-collection-sprite.png");
+  border-radius:999px 999px 18px 18px;
+}
+.colour-tile-visual{
+  background-image:url("assets/colour-collection-sprite.png");
+  border-radius:50%;
+}
+.colour-showcase{
+  padding-bottom:92px;
+  overflow:visible;
+}
+.colour-showcase-grid{
+  align-items:start;
+}
+.colour-tile{
+  display:block;
+  min-width:0;
+  padding-bottom:8px;
+  overflow:visible;
+}
+.colour-tile strong{
+  position:relative;
+  z-index:2;
+  white-space:normal;
+  line-height:1.05;
+}
+@media(max-width:620px){
+  .colour-showcase{padding-bottom:64px;overflow:hidden}
+}
