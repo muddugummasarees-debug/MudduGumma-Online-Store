@@ -100,6 +100,7 @@ async function loadProducts() {
 
     renderSareeCategories();
     populateProductFilters();
+    renderCollectionShowcases();
     renderProducts();
     updateCartCount();
     renderCart();
@@ -2120,6 +2121,131 @@ function productsForActiveSareeType() {
   );
 }
 
+
+// ==========================================
+// FABRIC + COLOUR SHOWCASES
+// ==========================================
+
+const showcaseFabrics = [
+  { id: "silk", label: "Silk" },
+  { id: "cotton", label: "Cotton" },
+  { id: "organza", label: "Organza" },
+  { id: "chiffon", label: "Chiffon" },
+  { id: "linen", label: "Linen" }
+];
+
+const showcaseColours = [
+  { key: "red", label: "Royal Red", accent: "#9f263c" },
+  { key: "green", label: "Emerald Green", accent: "#496b4b" },
+  { key: "black", label: "Midnight Black", accent: "#34302f" },
+  { key: "pink", label: "Pastel Pink", accent: "#d78da1" },
+  { key: "gold", label: "Golden Classic", accent: "#bd8a3e" }
+];
+
+function showcaseProductImage(product) {
+  if (!product) return "";
+  const images =
+    Array.isArray(product.images) && product.images.length
+      ? product.images
+      : product.image
+      ? [product.image]
+      : [];
+  return images[0] || "";
+}
+
+function productMatchesShowcaseColour(product, colourKey) {
+  return productFilterOptionValues(product, "colors")
+    .some(value =>
+      String(value).toLowerCase().includes(colourKey)
+    );
+}
+
+function showcaseProductForFabric(fabricId, index) {
+  return (
+    storeProducts.find(product =>
+      getSareeTypeDefinition(product).id === fabricId &&
+      showcaseProductImage(product)
+    ) ||
+    storeProducts.filter(showcaseProductImage)[index % Math.max(storeProducts.filter(showcaseProductImage).length, 1)]
+  );
+}
+
+function showcaseProductForColour(colourKey, index) {
+  return (
+    storeProducts.find(product =>
+      productMatchesShowcaseColour(product, colourKey) &&
+      showcaseProductImage(product)
+    ) ||
+    storeProducts.filter(showcaseProductImage)[index % Math.max(storeProducts.filter(showcaseProductImage).length, 1)]
+  );
+}
+
+function renderCollectionShowcases() {
+  const fabricGrid = document.getElementById("fabricShowcaseGrid");
+  const colourGrid = document.getElementById("colourShowcaseGrid");
+
+  if (fabricGrid) {
+    fabricGrid.innerHTML = showcaseFabrics.map((fabric, index) => {
+      const product = showcaseProductForFabric(fabric.id, index);
+      const image = showcaseProductImage(product);
+      return `
+        <button type="button" class="fabric-tile" onclick="openShowcaseFabric('${fabric.id}')" aria-label="Shop ${escapeAttribute(fabric.label)} sarees">
+          <span class="fabric-tile-visual">
+            ${image
+              ? `<img src="${escapeAttribute(image)}" alt="${escapeAttribute(fabric.label)} sarees" loading="lazy">`
+              : `<span class="saree-category-placeholder">${escapeHTML(fabric.label)}</span>`
+            }
+            <span class="fabric-tile-copy">
+              <strong>${escapeHTML(fabric.label)}</strong>
+              <small>Explore Collection</small>
+            </span>
+          </span>
+        </button>
+      `;
+    }).join("");
+  }
+
+  if (colourGrid) {
+    colourGrid.innerHTML = showcaseColours.map((colour, index) => {
+      const product = showcaseProductForColour(colour.key, index);
+      const image = showcaseProductImage(product);
+      return `
+        <button type="button" class="colour-tile" style="--tile-accent:${colour.accent}" onclick="openShowcaseColour('${colour.key}')" aria-label="Shop ${escapeAttribute(colour.label)} sarees">
+          <span class="colour-tile-visual">
+            ${image
+              ? `<img src="${escapeAttribute(image)}" alt="${escapeAttribute(colour.label)} sarees" loading="lazy">`
+              : `<span class="saree-category-placeholder">${escapeHTML(colour.label)}</span>`
+            }
+          </span>
+          <strong>${escapeHTML(colour.label)}</strong>
+          <small>Shop this colour</small>
+        </button>
+      `;
+    }).join("");
+  }
+}
+
+function openShowcaseFabric(fabricId) {
+  selectSareeCategory(fabricId);
+}
+
+function openShowcaseColour(colourKey) {
+  selectSareeCategory("all");
+
+  const matchingValues = Array
+    .from(document.querySelectorAll('input[name="filterColor"]'))
+    .map(input => input.value)
+    .filter(value =>
+      String(value).toLowerCase().includes(colourKey)
+    );
+
+  productFilterState.color = matchingValues;
+  syncProductFilterControls();
+  renderProducts();
+
+  document.getElementById("sareeResults")
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 // ==========================================
 // SHOW PRODUCTS
