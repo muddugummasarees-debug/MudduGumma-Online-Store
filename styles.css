@@ -5432,3 +5432,10 @@ footer{
 .colour-tile-visual:after{
   z-index:3;
 }
+
+
+/* Keep each fabric panel isolated from its neighbours */
+.fabric-tile .showcase-sprite-image{
+  left:calc(var(--showcase-index,0) * -104%);
+  width:520%;
+}
