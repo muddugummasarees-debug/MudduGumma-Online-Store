@@ -5400,3 +5400,35 @@ footer{
 @media(max-width:620px){
   .colour-showcase{padding-bottom:64px;overflow:hidden}
 }
+
+
+/* Reliable full-card sprite cropping */
+.fabric-tile-visual,
+.colour-tile-visual{
+  position:relative;
+  background-image:none !important;
+  overflow:hidden;
+  isolation:isolate;
+}
+.showcase-sprite-image,
+.fabric-tile .showcase-sprite-image,
+.colour-tile .showcase-sprite-image{
+  position:absolute;
+  z-index:0;
+  top:0;
+  left:calc(var(--showcase-index,0) * -100%);
+  display:block;
+  width:500%;
+  max-width:none;
+  height:auto;
+  min-height:100%;
+  object-fit:initial;
+  border-radius:0;
+  transform:none;
+}
+.fabric-tile-copy{
+  z-index:2;
+}
+.colour-tile-visual:after{
+  z-index:3;
+}
