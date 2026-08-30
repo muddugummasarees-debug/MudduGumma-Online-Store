@@ -5188,3 +5188,175 @@ footer{
     padding:19px;
   }
 }
+
+
+/* =====================================================
+   EXPLORE BY FABRIC + COLOURS OF TRADITION
+===================================================== */
+
+.collection-showcase-intro{
+  max-width:920px;
+  margin:0 auto 58px;
+  text-align:center;
+}
+.collection-showcase-intro h2{
+  color:var(--wine-dark);
+  font-size:clamp(46px,6vw,76px);
+}
+.collection-showcase-intro h2 span{color:#cf6f88}
+.collection-showcase-intro p,
+.showcase-heading p{
+  max-width:720px;
+  margin:20px auto 0;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.8;
+}
+.fabric-showcase,
+.colour-showcase{
+  position:relative;
+  margin:0 calc(clamp(18px,6vw,90px) * -1);
+  padding:70px clamp(18px,6vw,90px);
+  overflow:hidden;
+}
+.fabric-showcase{
+  background:
+    radial-gradient(circle at 8% 15%,rgba(201,117,139,.11),transparent 25%),
+    linear-gradient(135deg,#fff8f5,#fffdf9 52%,#f9eee9);
+}
+.colour-showcase{
+  background:
+    radial-gradient(circle at 92% 18%,rgba(184,121,37,.12),transparent 27%),
+    linear-gradient(135deg,#fffdf9,#fdf1f3 58%,#fff8ef);
+  border-top:1px solid rgba(184,121,37,.16);
+  border-bottom:1px solid rgba(184,121,37,.16);
+}
+.showcase-heading{text-align:center}
+.showcase-heading .section-label{margin-bottom:14px}
+.showcase-heading h3{
+  margin:0;
+  color:var(--wine-dark);
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:clamp(42px,5vw,64px);
+  font-weight:600;
+  line-height:1;
+}
+.fabric-showcase-grid,
+.colour-showcase-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:clamp(12px,2vw,24px);
+  max-width:1280px;
+  margin:42px auto 0;
+}
+.showcase-loading{grid-column:1/-1;text-align:center;color:var(--muted)}
+.fabric-tile,
+.colour-tile{
+  border:0;
+  padding:0;
+  background:transparent;
+  color:inherit;
+  cursor:pointer;
+  text-align:center;
+}
+.fabric-tile-visual{
+  position:relative;
+  overflow:hidden;
+  aspect-ratio:3/4;
+  border:1px solid rgba(184,121,37,.5);
+  border-radius:999px 999px 22px 22px;
+  background:linear-gradient(145deg,#edd8d7,#f8eee7);
+  box-shadow:0 16px 38px rgba(91,35,54,.11);
+  transition:transform .3s ease,box-shadow .3s ease;
+}
+.fabric-tile img,
+.colour-tile img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  transition:transform .45s ease;
+}
+.fabric-tile-copy{
+  position:absolute;
+  inset:auto 0 0;
+  padding:35px 10px 16px;
+  color:white;
+  background:linear-gradient(transparent,rgba(64,17,34,.86));
+}
+.fabric-tile-copy strong,
+.colour-tile strong{
+  display:block;
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:clamp(22px,2vw,30px);
+  font-weight:600;
+}
+.fabric-tile-copy small{
+  display:block;
+  margin-top:4px;
+  font-size:9px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.fabric-tile:hover .fabric-tile-visual,
+.fabric-tile:focus-visible .fabric-tile-visual{
+  transform:translateY(-7px);
+  box-shadow:0 24px 50px rgba(91,35,54,.18);
+}
+.fabric-tile:hover img,
+.colour-tile:hover img{transform:scale(1.05)}
+.colour-tile-visual{
+  position:relative;
+  width:100%;
+  aspect-ratio:1;
+  padding:7px;
+  border:1px solid var(--tile-accent,#bd774a);
+  border-radius:50%;
+  background:#fffaf6;
+  box-shadow:0 14px 32px rgba(91,35,54,.1);
+  transition:transform .3s ease,box-shadow .3s ease;
+}
+.colour-tile-visual:after{
+  content:"";
+  position:absolute;
+  inset:4px;
+  border:1px solid rgba(255,255,255,.8);
+  border-radius:50%;
+  pointer-events:none;
+}
+.colour-tile img{border-radius:50%}
+.colour-tile strong{margin-top:17px;color:var(--wine-dark)}
+.colour-tile small{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.colour-tile:hover .colour-tile-visual,
+.colour-tile:focus-visible .colour-tile-visual{
+  transform:translateY(-7px) scale(1.02);
+  box-shadow:0 22px 44px rgba(91,35,54,.17);
+}
+.fabric-tile:focus-visible,
+.colour-tile:focus-visible{outline:2px solid var(--wine);outline-offset:7px}
+@media(max-width:900px){
+  .fabric-showcase-grid,.colour-showcase-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media(max-width:620px){
+  .collection-showcase-intro{margin-bottom:38px}
+  .fabric-showcase,.colour-showcase{padding-top:52px;padding-bottom:54px}
+  .fabric-showcase-grid,.colour-showcase-grid{
+    display:flex;
+    gap:14px;
+    margin-right:-18px;
+    padding:2px 18px 18px 1px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+  }
+  .fabric-tile,.colour-tile{flex:0 0 64vw;scroll-snap-align:start}
+  .colour-tile{flex-basis:52vw}
+}
