@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="styles.css?v=royal-20260830" />
+  <link rel="stylesheet" href="styles.css?v=carousel-20260830" />
 </head>
 
 <body>
@@ -159,27 +159,120 @@
 
 <main>
 
-<section id="home" class="hero">  
-  <div class="hero-copy">
-    <span class="eyebrow">
-      Royal sarees for life's finest celebrations
-    </span>
+<section
+  id="home"
+  class="hero-carousel"
+  aria-label="Featured MudduGumma collections"
+  aria-roledescription="carousel"
+>
+  <div class="hero-slides">
+    <article
+      id="heroSlideRoyal"
+      class="hero hero-slide is-active"
+      data-hero-slide="0"
+      aria-hidden="false"
+      aria-label="1 of 2"
+    >
+      <div class="hero-copy">
+        <span class="eyebrow">
+          Royal sarees for life's finest celebrations
+        </span>
 
-    <h1>
-      Celebrate Tradition
-      <em>in Royal Style.</em>
-    </h1>
+        <h1>
+          Celebrate Tradition
+          <em>in Royal Style.</em>
+        </h1>
 
-    <p>
-      Exquisite sarees for weddings, festivals and every special occasion.
-    </p>
+        <p>
+          Exquisite sarees for weddings, festivals and every special occasion.
+        </p>
 
-    <div class="hero-actions">
-      <a class="button primary" href="#collections">Shop Now</a>
-    </div>
+        <div class="hero-actions">
+          <a class="button primary" href="#collections">Shop Now</a>
+        </div>
+      </div>
+    </article>
 
+    <article
+      id="heroSlideEveryday"
+      class="hero hero-slide hero-slide-everyday"
+      data-hero-slide="1"
+      aria-hidden="true"
+      aria-label="2 of 2"
+      inert
+    >
+      <div class="hero-copy">
+        <span class="eyebrow">Everyday Elegance</span>
+
+        <h1>
+          Style that feels
+          <em>beautifully you.</em>
+        </h1>
+
+        <p>
+          Discover graceful cotton-silk sarees selected for effortless,
+          timeless style.
+        </p>
+
+        <div class="hero-actions">
+          <a class="button primary" href="#collections">Explore Collections</a>
+        </div>
+      </div>
+    </article>
   </div>
 
+  <button
+    type="button"
+    class="hero-carousel-arrow previous"
+    onclick="changeHeroSlide(-1)"
+    aria-label="Show previous slide"
+  >
+    ‹
+  </button>
+
+  <button
+    type="button"
+    class="hero-carousel-arrow next"
+    onclick="changeHeroSlide(1)"
+    aria-label="Show next slide"
+  >
+    ›
+  </button>
+
+  <div class="hero-carousel-controls">
+    <div class="hero-carousel-dots" role="tablist" aria-label="Choose a slide">
+      <button
+        type="button"
+        class="hero-carousel-dot is-active"
+        role="tab"
+        aria-label="Show royal celebration slide"
+        aria-controls="heroSlideRoyal"
+        aria-selected="true"
+        onclick="setHeroSlide(0)"
+      ></button>
+
+      <button
+        type="button"
+        class="hero-carousel-dot"
+        role="tab"
+        aria-label="Show everyday elegance slide"
+        aria-controls="heroSlideEveryday"
+        aria-selected="false"
+        onclick="setHeroSlide(1)"
+      ></button>
+    </div>
+
+    <button
+      type="button"
+      id="heroCarouselPause"
+      class="hero-carousel-pause"
+      onclick="toggleHeroCarouselPause()"
+      aria-label="Pause automatic slides"
+      aria-pressed="false"
+    >
+      ❚❚
+    </button>
+  </div>
 </section>
 
 
@@ -745,7 +838,7 @@
   <div id="productDetailContent"></div>
 </section>
 
-<script src="script.js"></script>
+<script src="script.js?v=carousel-20260830"></script>
 
 </body>
 </html>

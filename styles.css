@@ -4551,3 +4551,213 @@ footer{
     margin:16px 0 20px;
   }
 }
+
+
+/* =====================================================
+   TWO-SLIDE HOMEPAGE CAROUSEL — 2026-08-30
+===================================================== */
+.hero-carousel{
+  position:relative;
+  overflow:hidden;
+  background:#fff8ef;
+  border-bottom:1px solid rgba(181,138,82,.22);
+}
+
+.hero-slides{
+  display:grid;
+}
+
+.hero-slide{
+  grid-area:1 / 1;
+  width:100%;
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .65s ease,visibility .65s ease;
+}
+
+.hero-slide.is-active{
+  z-index:1;
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+
+.hero-slide-everyday{
+  background-image:
+    linear-gradient(90deg,rgba(255,250,242,.99) 0%,rgba(255,250,242,.93) 29%,rgba(255,250,242,.58) 44%,rgba(255,250,242,.10) 59%,rgba(255,250,242,0) 72%),
+    url("/assets/everyday-elegance-hero.jpg?v=1")!important;
+  background-position:center!important;
+}
+
+.hero-slide-everyday h1{
+  color:#294e52;
+}
+
+.hero-slide-everyday h1 em{
+  color:#2d7480;
+}
+
+.hero-slide-everyday .eyebrow{
+  color:#9b6d31;
+}
+
+.hero-slide-everyday .button.primary{
+  background:linear-gradient(135deg,#2f7e88,#244f58);
+  box-shadow:0 14px 30px rgba(36,79,88,.22);
+}
+
+.hero-slide-everyday .button.primary:hover{
+  background:linear-gradient(135deg,#286c75,#1d4249);
+}
+
+.hero-carousel-arrow{
+  position:absolute;
+  z-index:4;
+  bottom:25px;
+  width:46px;
+  height:46px;
+  display:grid;
+  place-items:center;
+  padding:0 0 3px;
+  border:1px solid rgba(112,44,56,.16);
+  border-radius:50%;
+  background:rgba(255,252,247,.86);
+  color:#702c38;
+  box-shadow:0 9px 24px rgba(91,52,40,.12);
+  backdrop-filter:blur(5px);
+  font-family:Georgia,serif;
+  font-size:34px;
+  line-height:1;
+  cursor:pointer;
+  transition:transform .2s ease,background .2s ease;
+}
+
+.hero-carousel-arrow:hover{
+  transform:translateY(-2px);
+  background:#fffdf9;
+}
+
+.hero-carousel-arrow.previous{
+  right:82px;
+}
+
+.hero-carousel-arrow.next{
+  right:25px;
+}
+
+.hero-carousel-controls{
+  position:absolute;
+  z-index:4;
+  left:50%;
+  bottom:28px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  transform:translateX(-50%);
+}
+
+.hero-carousel-dots{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.hero-carousel-dot{
+  width:11px;
+  height:11px;
+  padding:0;
+  border:1px solid rgba(112,44,56,.70);
+  border-radius:50%;
+  background:rgba(255,255,255,.78);
+  cursor:pointer;
+  transition:width .25s ease,background .25s ease,border-color .25s ease;
+}
+
+.hero-carousel-dot.is-active{
+  width:28px;
+  border-radius:999px;
+  border-color:#9f4052;
+  background:#9f4052;
+}
+
+.hero-carousel-pause{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:rgba(255,252,247,.78);
+  color:#7a3947;
+  font-size:10px;
+  letter-spacing:-1px;
+  cursor:pointer;
+}
+
+.hero-carousel-pause[aria-pressed="true"]{
+  letter-spacing:0;
+}
+
+.hero-carousel-arrow:focus-visible,
+.hero-carousel-dot:focus-visible,
+.hero-carousel-pause:focus-visible{
+  outline:3px solid rgba(169,15,72,.30);
+  outline-offset:3px;
+}
+
+@media(max-width:900px){
+  .hero-slide-everyday{
+    background-image:
+      linear-gradient(180deg,rgba(255,250,242,.02) 22%,rgba(255,250,242,.22) 48%,rgba(255,250,242,.93) 68%,rgba(255,250,242,.99) 100%),
+      url("/assets/everyday-elegance-hero.jpg?v=1")!important;
+    background-position:66% center!important;
+  }
+
+  .hero-carousel-arrow{
+    bottom:18px;
+    width:40px;
+    height:40px;
+    font-size:29px;
+  }
+
+  .hero-carousel-arrow.previous{
+    right:64px;
+  }
+
+  .hero-carousel-arrow.next{
+    right:16px;
+  }
+
+  .hero-carousel-controls{
+    bottom:21px;
+  }
+}
+
+@media(max-width:560px){
+  .hero-slide-everyday{
+    background-position:65% top!important;
+  }
+
+  .hero-carousel-arrow{
+    display:none;
+  }
+
+  .hero-carousel-controls{
+    bottom:9px;
+  }
+
+  .hero-carousel-pause{
+    width:27px;
+    height:27px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .hero-slide,
+  .hero-carousel-arrow,
+  .hero-carousel-dot{
+    transition:none;
+  }
+}

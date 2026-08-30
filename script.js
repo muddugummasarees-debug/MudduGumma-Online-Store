@@ -3521,6 +3521,295 @@ function escapeJS(value) {
 
 
 // ==========================================
+// HOMEPAGE HERO CAROUSEL
+// ==========================================
+
+let activeHeroSlide = 0;
+let heroCarouselTimer = null;
+let heroCarouselPaused = false;
+
+const HERO_CAROUSEL_DELAY = 7000;
+
+
+function heroSlides() {
+
+  return Array.from(
+    document.querySelectorAll(
+      ".hero-slide"
+    )
+  );
+
+}
+
+
+function stopHeroCarousel() {
+
+  if (heroCarouselTimer) {
+    clearInterval(heroCarouselTimer);
+    heroCarouselTimer = null;
+  }
+
+}
+
+
+function startHeroCarousel() {
+
+  stopHeroCarousel();
+
+  const slides = heroSlides();
+
+  if (
+    heroCarouselPaused ||
+    slides.length < 2 ||
+    window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+  ) {
+    return;
+  }
+
+  heroCarouselTimer = setInterval(
+    () => {
+      setHeroSlide(
+        activeHeroSlide + 1,
+        { restart: false }
+      );
+    },
+    HERO_CAROUSEL_DELAY
+  );
+
+}
+
+
+function setHeroSlide(
+  requestedIndex,
+  options = {}
+) {
+
+  const slides = heroSlides();
+
+  if (!slides.length) {
+    return;
+  }
+
+  const dots = Array.from(
+    document.querySelectorAll(
+      ".hero-carousel-dot"
+    )
+  );
+
+  activeHeroSlide =
+    (
+      Number(requestedIndex) +
+      slides.length
+    ) % slides.length;
+
+  slides.forEach(
+    (slide, index) => {
+      const isActive =
+        index === activeHeroSlide;
+
+      slide.classList.toggle(
+        "is-active",
+        isActive
+      );
+
+      slide.setAttribute(
+        "aria-hidden",
+        String(!isActive)
+      );
+
+      slide.inert = !isActive;
+    }
+  );
+
+  dots.forEach(
+    (dot, index) => {
+      const isActive =
+        index === activeHeroSlide;
+
+      dot.classList.toggle(
+        "is-active",
+        isActive
+      );
+
+      dot.setAttribute(
+        "aria-selected",
+        String(isActive)
+      );
+    }
+  );
+
+  if (options.restart !== false) {
+    startHeroCarousel();
+  }
+
+}
+
+
+function changeHeroSlide(direction) {
+
+  setHeroSlide(
+    activeHeroSlide +
+    Number(direction || 0)
+  );
+
+}
+
+
+function toggleHeroCarouselPause() {
+
+  heroCarouselPaused =
+    !heroCarouselPaused;
+
+  const button =
+    document.getElementById(
+      "heroCarouselPause"
+    );
+
+  if (button) {
+    button.setAttribute(
+      "aria-pressed",
+      String(heroCarouselPaused)
+    );
+
+    button.setAttribute(
+      "aria-label",
+      heroCarouselPaused
+        ? "Resume automatic slides"
+        : "Pause automatic slides"
+    );
+
+    button.textContent =
+      heroCarouselPaused
+        ? "▶"
+        : "❚❚";
+  }
+
+  if (heroCarouselPaused) {
+    stopHeroCarousel();
+  } else {
+    startHeroCarousel();
+  }
+
+}
+
+
+function setupHeroCarousel() {
+
+  const carousel =
+    document.querySelector(
+      ".hero-carousel"
+    );
+
+  if (!carousel) {
+    return;
+  }
+
+  let touchStartX = null;
+
+  setHeroSlide(
+    0,
+    { restart: false }
+  );
+
+  startHeroCarousel();
+
+  carousel.addEventListener(
+    "mouseenter",
+    stopHeroCarousel
+  );
+
+  carousel.addEventListener(
+    "mouseleave",
+    startHeroCarousel
+  );
+
+  carousel.addEventListener(
+    "focusin",
+    stopHeroCarousel
+  );
+
+  carousel.addEventListener(
+    "focusout",
+    event => {
+      if (
+        !carousel.contains(
+          event.relatedTarget
+        )
+      ) {
+        startHeroCarousel();
+      }
+    }
+  );
+
+  carousel.addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        changeHeroSlide(-1);
+      }
+
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        changeHeroSlide(1);
+      }
+    }
+  );
+
+  carousel.addEventListener(
+    "touchstart",
+    event => {
+      touchStartX =
+        event.changedTouches[0]
+          ?.clientX ?? null;
+    },
+    { passive: true }
+  );
+
+  carousel.addEventListener(
+    "touchend",
+    event => {
+      if (touchStartX === null) {
+        return;
+      }
+
+      const touchEndX =
+        event.changedTouches[0]
+          ?.clientX ?? touchStartX;
+
+      const distance =
+        touchEndX - touchStartX;
+
+      touchStartX = null;
+
+      if (Math.abs(distance) < 50) {
+        return;
+      }
+
+      changeHeroSlide(
+        distance > 0 ? -1 : 1
+      );
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (document.hidden) {
+        stopHeroCarousel();
+      } else {
+        startHeroCarousel();
+      }
+    }
+  );
+
+}
+
+
+// ==========================================
 // AVAILABLE FOR HTML BUTTONS
 // ==========================================
 
@@ -3611,6 +3900,15 @@ window.addProductDetailToCart =
 window.addWishlistItemToCart =
   addWishlistItemToCart;
 
+window.setHeroSlide =
+  setHeroSlide;
+
+window.changeHeroSlide =
+  changeHeroSlide;
+
+window.toggleHeroCarouselPause =
+  toggleHeroCarouselPause;
+
 
 document.addEventListener("click", event => {
   const panel =
@@ -3653,4 +3951,5 @@ updateCartCount();
 updateWishlistCount();
 renderCart();
 renderWishlist();
+setupHeroCarousel();
 loadProducts();
