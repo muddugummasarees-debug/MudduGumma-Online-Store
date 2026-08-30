@@ -5439,3 +5439,10 @@ footer{
   left:calc(var(--showcase-index,0) * -104%);
   width:520%;
 }
+
+
+.contact-icon svg{
+  display:block;
+  width:24px;
+  height:24px;
+}
