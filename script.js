@@ -3604,6 +3604,15 @@ function setHeroSlide(
       slides.length
     ) % slides.length;
 
+  document
+    .querySelector(
+      ".hero-carousel"
+    )
+    ?.classList.toggle(
+      "is-everyday-active",
+      activeHeroSlide === 1
+    );
+
   slides.forEach(
     (slide, index) => {
       const isActive =

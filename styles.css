@@ -4561,6 +4561,12 @@ footer{
   overflow:hidden;
   background:#fff8ef;
   border-bottom:1px solid rgba(181,138,82,.22);
+  transition:background-color .65s ease,border-color .65s ease;
+}
+
+.hero-carousel.is-everyday-active{
+  background:#f7f2e9;
+  border-bottom-color:rgba(47,126,136,.22);
 }
 
 .hero-slides{
@@ -4700,6 +4706,28 @@ footer{
   letter-spacing:0;
 }
 
+.hero-carousel.is-everyday-active .hero-carousel-arrow{
+  border-color:rgba(47,126,136,.22);
+  color:#285f67;
+  background:rgba(248,252,249,.88);
+  box-shadow:0 9px 24px rgba(36,79,88,.12);
+}
+
+.hero-carousel.is-everyday-active .hero-carousel-dot{
+  border-color:rgba(47,126,136,.72);
+  background:rgba(248,252,249,.82);
+}
+
+.hero-carousel.is-everyday-active .hero-carousel-dot.is-active{
+  border-color:#2f7e88;
+  background:#2f7e88;
+}
+
+.hero-carousel.is-everyday-active .hero-carousel-pause{
+  color:#285f67;
+  background:rgba(248,252,249,.82);
+}
+
 .hero-carousel-arrow:focus-visible,
 .hero-carousel-dot:focus-visible,
 .hero-carousel-pause:focus-visible{
@@ -4713,6 +4741,12 @@ footer{
       linear-gradient(180deg,rgba(255,250,242,.02) 22%,rgba(255,250,242,.22) 48%,rgba(255,250,242,.93) 68%,rgba(255,250,242,.99) 100%),
       url("/assets/everyday-elegance-hero.jpg?v=1")!important;
     background-position:66% center!important;
+  }
+
+  .hero-slide-everyday .hero-copy{
+    background:rgba(244,249,247,.90);
+    border-color:rgba(47,126,136,.18);
+    box-shadow:0 18px 50px rgba(36,79,88,.12);
   }
 
   .hero-carousel-arrow{
@@ -4755,6 +4789,7 @@ footer{
 }
 
 @media(prefers-reduced-motion:reduce){
+  .hero-carousel,
   .hero-slide,
   .hero-carousel-arrow,
   .hero-carousel-dot{
