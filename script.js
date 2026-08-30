@@ -2188,7 +2188,7 @@ function renderCollectionShowcases() {
     fabricGrid.innerHTML = showcaseFabrics.map((fabric, index) => `
       <button type="button" class="fabric-tile" onclick="openShowcaseFabric('${fabric.id}')" aria-label="Shop ${escapeAttribute(fabric.label)} sarees">
         <span class="fabric-tile-visual">
-          <img class="showcase-sprite-image" src="assets/fabric-collection-sprite.png" alt="" aria-hidden="true" style="--showcase-index:${index}">
+          <img class="showcase-sprite-image" src="assets/fabric-collection-v2.jpg" alt="" aria-hidden="true" style="--showcase-index:${index}">
           <span class="fabric-tile-copy">
             <strong>${escapeHTML(fabric.label)}</strong>
             <small>Explore Collection</small>
@@ -2202,7 +2202,7 @@ function renderCollectionShowcases() {
     colourGrid.innerHTML = showcaseColours.map((colour, index) => `
       <button type="button" class="colour-tile" style="--tile-accent:${colour.accent}" onclick="openShowcaseColour('${colour.key}')" aria-label="Shop ${escapeAttribute(colour.label)} sarees">
         <span class="colour-tile-visual">
-          <img class="showcase-sprite-image" src="assets/colour-collection-sprite.png" alt="" aria-hidden="true" style="--showcase-index:${index}">
+          <img class="showcase-sprite-image" src="assets/colour-collection-v2.jpg" alt="" aria-hidden="true" style="--showcase-index:${index}">
         </span>
         <strong>${escapeHTML(colour.label)}</strong>
         <small>Shop this colour</small>
