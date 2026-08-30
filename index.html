@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="styles.css?v=carousel-theme-20260830" />
+  <link rel="stylesheet" href="styles.css?v=carousel-about-20260830" />
 </head>
 
 <body>
@@ -29,7 +29,7 @@
 
   <nav aria-label="Main navigation">
     <a href="#home">Home</a>
-    <a href="#about">About</a>
+    <a href="#home" onclick="setHeroSlide(1)">About</a>
     <a href="#collections">Collections</a>
     <a href="#contact">Contact</a>
   </nav>
@@ -201,8 +201,8 @@
       aria-label="2 of 2"
       inert
     >
-      <div class="hero-copy">
-        <span class="eyebrow">Everyday Elegance</span>
+      <div class="hero-copy hero-copy-about">
+        <span class="eyebrow">Welcome to MudduGumma</span>
 
         <h1>
           Style that feels
@@ -210,12 +210,28 @@
         </h1>
 
         <p>
-          Discover graceful cotton-silk sarees selected for effortless,
-          timeless style.
+          Discover elegant sarees, rich colours and graceful styles selected
+          for women who love timeless fashion.
         </p>
 
-        <div class="hero-actions">
-          <a class="button primary" href="#collections">Explore Collections</a>
+        <div class="hero-about-features" aria-label="Why shop at MudduGumma">
+          <article class="hero-about-feature">
+            <div class="hero-about-icon" aria-hidden="true">✦</div>
+            <h3>Latest Collections</h3>
+            <p>Fresh saree styles selected for festive and special occasions.</p>
+          </article>
+
+          <article class="hero-about-feature">
+            <div class="hero-about-icon" aria-hidden="true">◈</div>
+            <h3>Beautiful Quality</h3>
+            <p>Graceful designs, rich colours and carefully selected styles.</p>
+          </article>
+
+          <article class="hero-about-feature">
+            <div class="hero-about-icon" aria-hidden="true">♡</div>
+            <h3>Online Shopping</h3>
+            <p>Add your favourites to the cart and complete your order online.</p>
+          </article>
         </div>
       </div>
     </article>
@@ -273,47 +289,6 @@
       ❚❚
     </button>
   </div>
-</section>
-
-
-<section id="about" class="intro section">
-
-  <div class="section-label">
-    Welcome to MudduGumma
-  </div>
-
-  <h2>
-    Style that feels
-    <span>beautifully you.</span>
-  </h2>
-
-  <p class="lead">
-    Discover elegant sarees, rich colours and graceful styles selected
-    for women who love timeless fashion.
-  </p>
-
-  <div class="feature-grid">
-
-    <article>
-      <div class="icon">✦</div>
-      <h3>Latest Collections</h3>
-      <p>Fresh saree styles selected for festive and special occasions.</p>
-    </article>
-
-    <article>
-      <div class="icon">◈</div>
-      <h3>Beautiful Quality</h3>
-      <p>Graceful designs, rich colours and carefully selected styles.</p>
-    </article>
-
-    <article>
-      <div class="icon">♡</div>
-      <h3>Online Shopping</h3>
-      <p>Add your favourites to the cart and complete your order online.</p>
-    </article>
-
-  </div>
-
 </section>
 
 
@@ -838,7 +813,7 @@
   <div id="productDetailContent"></div>
 </section>
 
-<script src="script.js?v=carousel-theme-20260830"></script>
+<script src="script.js?v=carousel-about-20260830"></script>
 
 </body>
 </html>

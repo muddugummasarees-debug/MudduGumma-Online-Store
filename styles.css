@@ -4559,6 +4559,7 @@ footer{
 .hero-carousel{
   position:relative;
   overflow:hidden;
+  scroll-margin-top:82px;
   background:#fff8ef;
   border-bottom:1px solid rgba(181,138,82,.22);
   transition:background-color .65s ease,border-color .65s ease;
@@ -4615,6 +4616,68 @@ footer{
 
 .hero-slide-everyday .button.primary:hover{
   background:linear-gradient(135deg,#286c75,#1d4249);
+}
+
+.hero-copy-about{
+  width:min(100%,665px);
+  max-width:665px;
+}
+
+.hero-copy-about h1{
+  max-width:630px;
+  font-size:clamp(45px,4.25vw,68px);
+}
+
+.hero-copy-about > p{
+  max-width:625px;
+  margin:17px 0 20px;
+  font-size:15px;
+  line-height:1.55;
+}
+
+.hero-about-features{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  margin-top:20px;
+  border-top:1px solid rgba(47,126,136,.18);
+}
+
+.hero-about-feature{
+  min-width:0;
+  padding:17px 12px 6px;
+  text-align:center;
+}
+
+.hero-about-feature + .hero-about-feature{
+  border-left:1px solid rgba(47,126,136,.16);
+}
+
+.hero-about-icon{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 10px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#41949d,#285f67);
+  color:#fff;
+  box-shadow:0 8px 18px rgba(36,79,88,.16);
+  font-size:18px;
+}
+
+.hero-about-feature h3{
+  margin:0 0 7px;
+  color:#285f67;
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:19px;
+  line-height:1.1;
+}
+
+.hero-about-feature p{
+  margin:0;
+  color:#6b7471;
+  font-size:11px;
+  line-height:1.45;
 }
 
 .hero-carousel-arrow{
@@ -4749,6 +4812,24 @@ footer{
     box-shadow:0 18px 50px rgba(36,79,88,.12);
   }
 
+  .hero-copy-about{
+    width:min(100%,720px);
+    max-width:720px;
+    padding:24px;
+  }
+
+  .hero-copy-about h1{
+    font-size:clamp(42px,8vw,60px);
+  }
+
+  .hero-copy-about > p{
+    margin:14px 0 17px;
+  }
+
+  .hero-about-features{
+    margin-top:15px;
+  }
+
   .hero-carousel-arrow{
     bottom:18px;
     width:40px;
@@ -4770,8 +4851,56 @@ footer{
 }
 
 @media(max-width:560px){
+  .hero-carousel{
+    scroll-margin-top:68px;
+  }
+
   .hero-slide-everyday{
+    min-height:930px;
     background-position:65% top!important;
+  }
+
+  .hero-copy-about{
+    padding:21px 17px;
+  }
+
+  .hero-copy-about h1{
+    font-size:clamp(39px,12vw,52px);
+  }
+
+  .hero-copy-about > p{
+    font-size:13px;
+  }
+
+  .hero-about-features{
+    grid-template-columns:1fr;
+  }
+
+  .hero-about-feature{
+    display:grid;
+    grid-template-columns:42px 1fr;
+    column-gap:12px;
+    padding:11px 0;
+    text-align:left;
+  }
+
+  .hero-about-feature + .hero-about-feature{
+    border-top:1px solid rgba(47,126,136,.14);
+    border-left:0;
+  }
+
+  .hero-about-icon{
+    grid-row:1 / span 2;
+    margin:0;
+  }
+
+  .hero-about-feature h3{
+    margin:1px 0 3px;
+    font-size:18px;
+  }
+
+  .hero-about-feature p{
+    font-size:11px;
   }
 
   .hero-carousel-arrow{
