@@ -182,6 +182,9 @@ th,td{border-color:rgba(143,64,80,.10)}
 .order-admin-list{display:grid;gap:16px;margin-top:18px}
 .admin-order-card{border:1px solid var(--line);border-radius:16px;padding:18px;background:#fffaf8}
 .admin-order-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:12px}
+.admin-order-head-actions{display:grid;justify-items:end;gap:10px}
+.admin-order-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.admin-order-actions .btn{padding:10px 14px;font-size:12px;white-space:nowrap}
 .admin-order-id{font-weight:800;color:var(--wine-dark);overflow-wrap:anywhere}
 .admin-order-meta,.admin-order-customer,.admin-order-items{font-size:13px;color:#6f5d64;line-height:1.55}
 .admin-order-items{margin:12px 0;padding:12px;background:#fff;border:1px solid rgba(143,64,80,.10);border-radius:12px}
@@ -212,6 +215,8 @@ th,td{border-color:rgba(143,64,80,.10)}
 .admin-panel.hidden{display:none}
 @media(max-width:760px){
   .admin-order-head{display:block}
+  .admin-order-head-actions{justify-items:start;margin-top:12px}
+  .admin-order-actions{justify-content:flex-start}
   .admin-order-controls{grid-template-columns:1fr}
   .admin-shell{grid-template-columns:1fr}
   .admin-sidebar{position:sticky;top:81px;z-index:15;padding:10px}
@@ -941,6 +946,174 @@ function downloadSubscribers(){
 }
 
 
+function orderAddressText(order){
+  const customer=order&&order.customer?order.customer:{};
+  const location=[customer.city,customer.state,customer.pincode].filter(Boolean).join(', ');
+  return [
+    customer.name||'Customer',
+    customer.address||'',
+    location,
+    customer.country||'India',
+    customer.mobile?'Phone: '+customer.mobile:'',
+    'Order: '+(order&&order.id?order.id:'')
+  ].filter(Boolean).join('\n');
+}
+
+async function copyOrderAddress(index){
+  const order=orders[index];
+  const message=$('orderMessage'+index);
+  if(!order) return;
+  const text=orderAddressText(order);
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(text);
+    }else{
+      const helper=document.createElement('textarea');
+      helper.value=text;
+      helper.setAttribute('readonly','');
+      helper.style.position='fixed';
+      helper.style.opacity='0';
+      document.body.appendChild(helper);
+      helper.select();
+      document.execCommand('copy');
+      helper.remove();
+    }
+    if(message) message.textContent='Customer address copied.';
+  }catch(error){
+    if(message) message.textContent='Could not copy automatically. Please select and copy the address above.';
+  }
+}
+
+function buildShippingLabelHtml(order){
+  const customer=order&&order.customer?order.customer:{};
+  const orderId=String(order&&order.id?order.id:'');
+  const orderDate=formatAdminDate(order&&order.createdAt);
+  const itemLines=(Array.isArray(order&&order.items)?order.items:[]).map(item=>{
+    const size=item.size?' · Size '+item.size:'';
+    return esc((item.name||'Item')+' × '+(Number(item.quantity)||1)+size);
+  }).join('<br>');
+  const pieces=(Array.isArray(order&&order.items)?order.items:[]).reduce(
+    (total,item)=>total+(Number(item.quantity)||1),0
+  );
+  const qrText='MudduGumma Order '+orderId;
+  const qrUrl=
+    'https://quickchart.io/qr?size=240&margin=1&ecLevel=M&text='+
+    encodeURIComponent(qrText);
+  const location=[customer.city,customer.state].filter(Boolean).join(', ');
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MudduGumma Label - ${esc(orderId)}</title>
+<style>
+@page{size:4in 6in;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;width:4in;height:6in;background:#fff;color:#000}
+body{font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.28}
+.label{width:4in;height:6in;padding:.18in;display:flex;flex-direction:column;gap:.11in;overflow:hidden}
+.top{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:.09in}
+.brand{font-size:18px;font-weight:900;letter-spacing:.5px}
+.sub{font-size:9px;font-weight:700;margin-top:3px}
+.prepaid{border:2px solid #000;padding:6px 10px;font-weight:900;font-size:14px}
+.section-label{font-size:9px;font-weight:900;letter-spacing:1.3px;margin-bottom:4px}
+.name{font-size:19px;font-weight:900;margin-bottom:5px}
+.address{font-size:15px;font-weight:700;line-height:1.38}
+.pin{font-size:21px;font-weight:900;margin-top:5px}
+.phone{font-size:14px;font-weight:800;margin-top:5px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:7px;border-top:2px solid #000;border-bottom:2px solid #000;padding:.09in 0}
+.meta div{font-size:11px}
+.meta strong{display:block;font-size:13px;margin-top:2px}
+.items{font-size:11px;line-height:1.35;max-height:.6in;overflow:hidden}
+.bottom{margin-top:auto;display:grid;grid-template-columns:1fr 1.05in;gap:.12in;align-items:end}
+.notice{font-size:10px;font-weight:700}
+.cod{border:2px solid #000;padding:6px;text-align:center;font-size:12px;font-weight:900;margin-top:7px}
+.qr{text-align:center}
+.qr img{display:block;width:1in;height:1in;margin:0 auto 3px}
+.qr span{font-size:8px;font-weight:700}
+.actions{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;justify-content:center;padding:8px;background:#fff;border-top:1px solid #aaa}
+.actions button{font:700 13px Arial;padding:8px 16px;background:#000;color:#fff;border:0;border-radius:4px}
+@media print{.actions{display:none}}
+</style>
+</head>
+<body>
+<main class="label">
+  <header class="top">
+    <div>
+      <div class="brand">MUDDUGUMMA</div>
+      <div class="sub">WOMEN'S WEAR · SHIPPING ADDRESS LABEL</div>
+    </div>
+    <div class="prepaid">PREPAID</div>
+  </header>
+
+  <section>
+    <div class="section-label">DELIVER TO</div>
+    <div class="name">${esc(customer.name||'Customer')}</div>
+    <div class="address">
+      ${esc(customer.address||'')}<br>
+      ${esc(location)}${location?', ':''}${esc(customer.pincode||'')}<br>
+      ${esc(customer.country||'India')}
+    </div>
+    <div class="pin">PIN: ${esc(customer.pincode||'—')}</div>
+    <div class="phone">PHONE: ${esc(customer.mobile||'—')}</div>
+  </section>
+
+  <section class="meta">
+    <div>ORDER ID<strong>${esc(orderId)}</strong></div>
+    <div>ORDER DATE<strong>${esc(orderDate)}</strong></div>
+    <div>PIECES<strong>${pieces}</strong></div>
+    <div>AMOUNT<strong>${esc(formatAdminRupees(order&&order.amount!=null?order.amount:order&&order.total))}</strong></div>
+  </section>
+
+  <section>
+    <div class="section-label">PACKAGE CONTENTS</div>
+    <div class="items">${itemLines||'Order items'}</div>
+  </section>
+
+  <section class="bottom">
+    <div class="notice">
+      <div class="cod">PAID ONLINE — DO NOT COLLECT CASH</div>
+      <p>From: MudduGumma Women's Wear<br>Customer support: +91 79938 54769</p>
+      <p>Attach the courier's AWB/barcode label separately.</p>
+    </div>
+    <div class="qr">
+      <img src="${qrUrl}" alt="Order QR code">
+      <span>SCAN ORDER REFERENCE</span>
+    </div>
+  </section>
+</main>
+<div class="actions">
+  <button type="button" onclick="window.print()">PRINT LABEL</button>
+  <button type="button" onclick="window.close()">CLOSE</button>
+</div>
+<script>
+window.addEventListener('load',function(){
+  window.setTimeout(function(){ window.print(); },500);
+});
+<\/script>
+</body>
+</html>`;
+}
+
+function printShippingLabel(index){
+  const order=orders[index];
+  const message=$('orderMessage'+index);
+  if(!order) return;
+  const customer=order.customer||{};
+  if(!customer.name||!customer.address||!customer.pincode){
+    if(message) message.textContent='Add the customer name, address and PIN code before printing.';
+    return;
+  }
+  const printWindow=window.open('','_blank','width=700,height=850');
+  if(!printWindow){
+    if(message) message.textContent='Please allow pop-ups for this website, then click Print 4×6 Label again.';
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(buildShippingLabelHtml(order));
+  printWindow.document.close();
+  if(message) message.textContent='Print label opened. Select your Helett printer and 4×6 paper.';
+}
+
 async function loadOrders(){
   $('ordersMessage').textContent='';
   $('adminOrders').innerHTML='<div class="muted">Loading orders...</div>';
@@ -1009,7 +1182,17 @@ async function loadOrders(){
               ${formatAdminDate(order.createdAt)} · ${formatAdminRupees(order.amount)}
             </div>
           </div>
-          <strong>${esc(statusLabel(order.status))}</strong>
+          <div class="admin-order-head-actions">
+            <strong>${esc(statusLabel(order.status))}</strong>
+            <div class="admin-order-actions">
+              <button type="button" class="btn alt" onclick="copyOrderAddress(${index})">
+                Copy Address
+              </button>
+              <button type="button" class="btn" onclick="printShippingLabel(${index})">
+                Print 4×6 Label
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="admin-order-customer">
