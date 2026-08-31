@@ -343,11 +343,49 @@
     }
 
     .order-item{
-      display:flex;
-      justify-content:space-between;
+      display:grid;
+      grid-template-columns:62px minmax(0,1fr) auto;
+      align-items:center;
       gap:12px;
       color:var(--text);
       font-size:14px;
+    }
+
+    .order-item + .order-item{
+      padding-top:8px;
+      border-top:1px solid #f3eaed;
+    }
+
+    .order-item-image,
+    .order-item-image-placeholder{
+      width:62px;
+      height:78px;
+      border-radius:10px;
+    }
+
+    .order-item-image{
+      display:block;
+      object-fit:cover;
+      background:#f4ecee;
+    }
+
+    .order-item-image-placeholder{
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg,#f8e8ed,#efe4df);
+      color:var(--wine);
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .order-item-name{
+      min-width:0;
+      line-height:1.45;
+    }
+
+    .order-item-price{
+      color:var(--wine-dark);
+      white-space:nowrap;
     }
 
     .order-empty{
@@ -963,8 +1001,33 @@
             document.createElement("div");
           row.className = "order-item";
 
+          const productName =
+            String(orderItem.name || "Item");
+          const imageUrl =
+            String(orderItem.image || "").trim();
+          const image =
+            imageUrl
+              ? document.createElement("img")
+              : document.createElement("div");
+
+          if (imageUrl) {
+            image.className = "order-item-image";
+            image.src = imageUrl;
+            image.alt = productName;
+            image.loading = "lazy";
+          } else {
+            image.className =
+              "order-item-image-placeholder";
+            image.textContent = "MG";
+            image.setAttribute(
+              "aria-hidden",
+              "true"
+            );
+          }
+
           const name =
             document.createElement("span");
+          name.className = "order-item-name";
           const quantity =
             Math.max(
               1,
@@ -983,19 +1046,20 @@
               .join(" · ");
 
           name.textContent =
-            String(orderItem.name || "Item") +
+            productName +
             " × " + quantity +
             (variantText ? " — " + variantText : "");
 
           const price =
             document.createElement("strong");
+          price.className = "order-item-price";
           price.textContent =
             formatRupees(
               Number(orderItem.price || 0) *
               quantity
             );
 
-          row.append(name, price);
+          row.append(image, name, price);
           itemsWrap.append(row);
         });
       }

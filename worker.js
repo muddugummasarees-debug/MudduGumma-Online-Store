@@ -771,6 +771,35 @@ export default {
             )
             .all();
 
+        const productResult =
+          await env.DB
+            .prepare(`
+              SELECT id, image, images
+              FROM products
+            `)
+            .all();
+
+        const productImageById =
+          new Map(
+            (productResult.results || [])
+              .map(product => {
+                const images =
+                  safeJsonArray(
+                    product.images
+                  );
+
+                return [
+                  String(product.id),
+                  cleanText(
+                    product.image ||
+                    images[0] ||
+                    "",
+                    2000
+                  )
+                ];
+              })
+          );
+
         const orders =
           (result.results || [])
             .map(order => ({
@@ -783,7 +812,29 @@ export default {
                 ),
 
               items:
-               JSON.parse(order.items || "[]"),
+                safeJsonArray(order.items)
+                  .map(item => {
+                    const safeItem =
+                      item &&
+                      typeof item === "object"
+                        ? item
+                        : {};
+
+                    return {
+                      ...safeItem,
+                      image:
+                        cleanText(
+                          safeItem.image,
+                          2000
+                        ) ||
+                        productImageById.get(
+                          String(
+                            safeItem.id || ""
+                          )
+                        ) ||
+                        ""
+                    };
+                  }),
 
               status:
                 order.status,
