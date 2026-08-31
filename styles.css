@@ -5440,6 +5440,7 @@ footer{
   overflow:hidden;
 }
 .fabric-showcase{
+  scroll-margin-top:96px;
   background:
     radial-gradient(circle at 8% 15%,rgba(201,117,139,.11),transparent 25%),
     linear-gradient(135deg,#fff8f5,#fffdf9 52%,#f9eee9);
@@ -5666,3 +5667,4 @@ footer{
   width:24px;
   height:24px;
 }
+
