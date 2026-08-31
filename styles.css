@@ -563,6 +563,50 @@ input:focus{
   box-shadow:0 0 0 3px rgba(233,45,104,.08);
 }
 
+.notify-honeypot{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  overflow:hidden!important;
+  clip:rect(0 0 0 0)!important;
+  white-space:nowrap!important;
+}
+
+.notify-form .notify-consent{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin:4px 0 18px;
+  color:#735760;
+  font-size:11px;
+  line-height:1.55;
+}
+
+.notify-form .notify-consent input{
+  width:17px;
+  height:17px;
+  flex:0 0 17px;
+  margin:1px 0 0;
+  accent-color:var(--wine);
+}
+
+.notify-form .notify-consent span{
+  margin:0;
+  color:#735760;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0;
+  line-height:1.55;
+  text-transform:none;
+}
+
+.notify-form .notify-consent a{
+  color:var(--wine);
+  font-weight:700;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+
 .notify-form .button{
   border:0;
   cursor:pointer;
@@ -570,11 +614,20 @@ input:focus{
   margin-top:3px;
 }
 
+.notify-form .button:disabled{
+  cursor:wait;
+  opacity:.68;
+}
+
 .form-message{
   margin:12px 0 0!important;
   text-align:center;
   font-size:12px!important;
   color:var(--wine)!important;
+}
+
+.form-message.error{
+  color:#b32643!important;
 }
 
 

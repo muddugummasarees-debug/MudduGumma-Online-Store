@@ -6,6 +6,7 @@ const PASSWORD_ITERATIONS = 100000;
 
 let productMetadataReady = false;
 let orderTrackingReady = false;
+let subscriberSchemaReady = false;
 
 export default {
   async fetch(request, env) {
@@ -40,9 +41,335 @@ export default {
           razorpay: !!(
             env.RAZORPAY_KEY_ID &&
             env.RAZORPAY_KEY_SECRET
+          ),
+
+          newsletterEmail: !!(
+            env.RESEND_API_KEY &&
+            env.NEWSLETTER_FROM_EMAIL
           )
         });
       }
+
+      // ==========================================
+      // EMAIL SUBSCRIBERS
+      // ==========================================
+
+      if (
+        path === "/api/subscribers" &&
+        request.method === "POST"
+      ) {
+        const body =
+          await readJson(request);
+
+        if (
+          cleanText(
+            body.website,
+            200
+          )
+        ) {
+          return json({
+            ok: true,
+            confirmationEmailSent: false
+          });
+        }
+
+        const name =
+          cleanText(
+            body.name,
+            120
+          );
+
+        const email =
+          cleanText(
+            body.email,
+            300
+          )
+            .toLowerCase();
+
+        if (!name) {
+          return json(
+            {
+              error:
+                "Please enter your name."
+            },
+            400
+          );
+        }
+
+        if (
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            .test(email)
+        ) {
+          return json(
+            {
+              error:
+                "Please enter a valid email address."
+            },
+            400
+          );
+        }
+
+        if (body.consent !== true) {
+          return json(
+            {
+              error:
+                "Please agree to receive email updates."
+            },
+            400
+          );
+        }
+
+        await ensureSubscriberTable(
+          env
+        );
+
+        const existing =
+          await env.DB
+            .prepare(`
+              SELECT status
+              FROM email_subscribers
+              WHERE email = ?
+            `)
+            .bind(email)
+            .first();
+
+        const unsubscribeToken =
+          randomHex(32);
+
+        const unsubscribeTokenHash =
+          await digestHex(
+            "SHA-256",
+            unsubscribeToken
+          );
+
+        const now =
+          new Date()
+            .toISOString();
+
+        await env.DB
+          .prepare(`
+            INSERT INTO email_subscribers (
+              name,
+              email,
+              status,
+              consent_at,
+              created_at,
+              updated_at,
+              unsubscribe_token_hash
+            )
+
+            VALUES (
+              ?, ?,
+              'subscribed',
+              ?, ?, ?, ?
+            )
+
+            ON CONFLICT(email)
+            DO UPDATE SET
+              name = excluded.name,
+              status = 'subscribed',
+              consent_at = excluded.consent_at,
+              updated_at = excluded.updated_at,
+              unsubscribe_token_hash =
+                excluded.unsubscribe_token_hash
+          `)
+          .bind(
+            name,
+            email,
+            now,
+            now,
+            now,
+            unsubscribeTokenHash
+          )
+          .run();
+
+        let confirmationEmailSent =
+          false;
+
+        const senderEmail =
+          cleanText(
+            env.NEWSLETTER_FROM_EMAIL,
+            300
+          )
+            .toLowerCase();
+
+        const shouldSendConfirmation =
+          (
+            !existing ||
+            existing.status !==
+              "subscribed"
+          ) &&
+          env.RESEND_API_KEY &&
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            .test(senderEmail);
+
+        if (shouldSendConfirmation) {
+          try {
+            const origin =
+              new URL(
+                request.url
+              )
+                .origin;
+
+            const unsubscribeUrl =
+              origin +
+              "/api/subscribers/unsubscribe" +
+              "?token=" +
+              encodeURIComponent(
+                unsubscribeToken
+              );
+
+            const emailResponse =
+              await fetch(
+                "https://api.resend.com/emails",
+                {
+                  method: "POST",
+
+                  headers: {
+                    "Authorization":
+                      `Bearer ${env.RESEND_API_KEY}`,
+
+                    "Content-Type":
+                      "application/json"
+                  },
+
+                  body:
+                    JSON.stringify({
+                      from:
+                        `MudduGumma <${senderEmail}>`,
+
+                      to: [
+                        email
+                      ],
+
+                      subject:
+                        "Welcome to MudduGumma updates",
+
+                      text:
+`Hello ${name},
+
+Thank you for joining MudduGumma Women's Wear updates.
+
+We will email you about selected new collections and offers. You can unsubscribe at any time using this link:
+
+${unsubscribeUrl}
+
+MudduGumma Women's Wear`
+                    })
+                }
+              );
+
+            confirmationEmailSent =
+              emailResponse.ok;
+
+            if (!emailResponse.ok) {
+              console.error(
+                "Subscriber confirmation email failed:",
+                emailResponse.status
+              );
+            }
+
+          } catch (emailError) {
+            console.error(
+              "Subscriber confirmation email error:",
+              emailError
+            );
+          }
+        }
+
+        return json({
+          ok: true,
+          confirmationEmailSent
+        });
+      }
+
+
+      if (
+        path ===
+          "/api/subscribers/unsubscribe" &&
+        request.method === "GET"
+      ) {
+        const token =
+          cleanText(
+            url.searchParams.get(
+              "token"
+            ),
+            200
+          );
+
+        if (!token) {
+          return new Response(
+            "Invalid unsubscribe link.",
+            {
+              status: 400,
+              headers: {
+                "Content-Type":
+                  "text/plain; charset=utf-8",
+                ...corsHeaders()
+              }
+            }
+          );
+        }
+
+        await ensureSubscriberTable(
+          env
+        );
+
+        const tokenHash =
+          await digestHex(
+            "SHA-256",
+            token
+          );
+
+        await env.DB
+          .prepare(`
+            UPDATE email_subscribers
+            SET
+              status = 'unsubscribed',
+              updated_at = ?
+            WHERE unsubscribe_token_hash = ?
+          `)
+          .bind(
+            new Date()
+              .toISOString(),
+            tokenHash
+          )
+          .run();
+
+        return new Response(
+`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Email Preferences | MudduGumma</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#fff5f7;color:#4b2735;font-family:Arial,sans-serif}
+main{max-width:560px;padding:42px;border:1px solid #eadde1;border-radius:22px;background:#fff;text-align:center;box-shadow:0 18px 55px rgba(75,39,53,.10)}
+h1{color:#8f4050}a{color:#8f4050;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<h1>You are unsubscribed</h1>
+<p>You will no longer receive MudduGumma collection and offer emails.</p>
+<a href="/">Return to MudduGumma</a>
+</main>
+</body>
+</html>`,
+          {
+            status: 200,
+            headers: {
+              "Content-Type":
+                "text/html; charset=utf-8",
+              "Cache-Control":
+                "no-store",
+              ...corsHeaders()
+            }
+          }
+        );
+      }
+
 
       // ==========================================
       // ADMIN LOGIN
@@ -859,6 +1186,77 @@ export default {
           orders
         });
       }
+
+      // ==========================================
+      // ADMIN EMAIL SUBSCRIBERS
+      // ==========================================
+
+      if (
+        path ===
+          "/api/admin/subscribers" &&
+        request.method === "GET"
+      ) {
+        if (
+          !(
+            await isAuthed(
+              request,
+              env
+            )
+          )
+        ) {
+          return json(
+            {
+              error:
+                "Admin login required."
+            },
+            401
+          );
+        }
+
+        await ensureSubscriberTable(
+          env
+        );
+
+        const result =
+          await env.DB
+            .prepare(`
+              SELECT
+                id,
+                name,
+                email,
+                status,
+                consent_at,
+                created_at,
+                updated_at
+              FROM email_subscribers
+              ORDER BY created_at DESC
+              LIMIT 2000
+            `)
+            .all();
+
+        return json({
+          subscribers:
+            (result.results || [])
+              .map(item => ({
+                id:
+                  Number(item.id),
+                name:
+                  item.name || "",
+                email:
+                  item.email || "",
+                status:
+                  item.status ||
+                  "subscribed",
+                consentAt:
+                  item.consent_at,
+                createdAt:
+                  item.created_at,
+                updatedAt:
+                  item.updated_at
+              }))
+        });
+      }
+
 
       // ==========================================
       // ADMIN ORDER MANAGEMENT
@@ -2690,6 +3088,61 @@ function safeJsonArray(
   }
 }
 
+
+
+// ==========================================
+// EMAIL SUBSCRIBER SCHEMA
+// ==========================================
+
+async function ensureSubscriberTable(
+  env
+) {
+  if (subscriberSchemaReady) {
+    return;
+  }
+
+  await env.DB
+    .batch([
+      env.DB
+        .prepare(`
+          CREATE TABLE IF NOT EXISTS
+            email_subscribers (
+              id INTEGER
+                PRIMARY KEY AUTOINCREMENT,
+              name TEXT
+                NOT NULL DEFAULT '',
+              email TEXT
+                NOT NULL
+                COLLATE NOCASE
+                UNIQUE,
+              status TEXT
+                NOT NULL
+                DEFAULT 'subscribed',
+              consent_at TEXT
+                NOT NULL,
+              created_at TEXT
+                NOT NULL,
+              updated_at TEXT
+                NOT NULL,
+              unsubscribe_token_hash TEXT
+                NOT NULL
+                DEFAULT ''
+            )
+        `),
+
+      env.DB
+        .prepare(`
+          CREATE INDEX IF NOT EXISTS
+            idx_email_subscribers_status
+          ON email_subscribers (
+            status,
+            created_at
+          )
+        `)
+    ]);
+
+  subscriberSchemaReady = true;
+}
 
 
 // ==========================================

@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="styles.css?v=customer-policies-20260831" />
+  <link rel="stylesheet" href="styles.css?v=newsletter-subscriptions-20260831" />
 </head>
 
 <body>
@@ -787,7 +787,21 @@
       <input id="email" type="email" placeholder="you@example.com" required />
     </label>
 
-    <button class="button primary" type="submit">
+    <div class="notify-honeypot" aria-hidden="true">
+      <label for="notifyWebsite">Website</label>
+      <input id="notifyWebsite" name="website" type="text" tabindex="-1" autocomplete="off">
+    </div>
+
+    <label class="notify-consent">
+      <input id="notifyConsent" type="checkbox" required>
+      <span>
+        I agree to receive MudduGumma collection and offer emails.
+        I can unsubscribe anytime. See the
+        <a href="privacy-policy.html">Privacy Policy</a>.
+      </span>
+    </label>
+
+    <button id="notifyButton" class="button primary" type="submit">
       Notify me
     </button>
 
@@ -1147,7 +1161,7 @@
   </section>
 </div>
 
-<script src="script.js?v=product-image-zoom-20260831"></script>
+<script src="script.js?v=newsletter-subscriptions-20260831"></script>
 
 </body>
 </html>

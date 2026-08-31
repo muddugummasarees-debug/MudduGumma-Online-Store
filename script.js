@@ -3692,7 +3692,7 @@ if (notifyForm) {
 
   notifyForm.addEventListener(
     "submit",
-    function(event) {
+    async function(event) {
 
       event.preventDefault();
 
@@ -3703,26 +3703,118 @@ if (notifyForm) {
           ?.value
           .trim() || "";
 
+      const email =
+        document
+          .getElementById("email")
+          ?.value
+          .trim() || "";
+
+      const consent =
+        Boolean(
+          document
+            .getElementById(
+              "notifyConsent"
+            )
+            ?.checked
+        );
+
+      const website =
+        document
+          .getElementById(
+            "notifyWebsite"
+          )
+          ?.value || "";
 
       const message =
         document.getElementById(
           "formMessage"
         );
 
+      const button =
+        document.getElementById(
+          "notifyButton"
+        );
+
 
       if (message) {
-
         message.textContent =
-          `Thank you${
-            name
-              ? ", " + name
-              : ""
-          }! We'll keep you posted about new collections and offers.`;
-
+          "Saving your subscription...";
+        message.classList.remove(
+          "error"
+        );
       }
 
 
-      this.reset();
+      if (button) {
+        button.disabled = true;
+        button.textContent =
+          "SUBSCRIBING...";
+      }
+
+
+      try {
+        const response =
+          await fetch(
+            "/api/subscribers",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+                  name,
+                  email,
+                  consent,
+                  website
+                })
+            }
+          );
+
+        const result =
+          await response
+            .json()
+            .catch(
+              () => ({})
+            );
+
+        if (!response.ok) {
+          throw new Error(
+            result.error ||
+            "Could not subscribe right now."
+          );
+        }
+
+        if (message) {
+          message.textContent =
+            result.confirmationEmailSent
+              ? "You are subscribed. Please check your inbox for confirmation."
+              : "You are subscribed. Your details were saved successfully.";
+        }
+
+        this.reset();
+
+      } catch (error) {
+        if (message) {
+          message.textContent =
+            error.message ||
+            "Could not subscribe right now.";
+          message.classList.add(
+            "error"
+          );
+        }
+
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent =
+            "NOTIFY ME";
+        }
+      }
 
     }
   );
