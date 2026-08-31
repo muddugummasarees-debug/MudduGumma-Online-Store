@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="styles.css?v=contact-icons-20260830" />
+  <link rel="stylesheet" href="styles.css?v=six-hero-slides-20260830" />
 </head>
 
 <body>
@@ -170,8 +170,9 @@
       id="heroSlideRoyal"
       class="hero hero-slide is-active"
       data-hero-slide="0"
+      data-hero-theme="royal"
       aria-hidden="false"
-      aria-label="1 of 2"
+      aria-label="1 of 6"
     >
       <div class="hero-copy">
         <span class="eyebrow">
@@ -197,8 +198,9 @@
       id="heroSlideEveryday"
       class="hero hero-slide hero-slide-everyday"
       data-hero-slide="1"
+      data-hero-theme="everyday"
       aria-hidden="true"
-      aria-label="2 of 2"
+      aria-label="2 of 6"
       inert
     >
       <div class="hero-copy hero-copy-about">
@@ -232,6 +234,134 @@
             <h3>Online Shopping</h3>
             <p>Add your favourites to the cart and complete your order online.</p>
           </article>
+        </div>
+      </div>
+    </article>
+
+    <article
+      id="heroSlideEmerald"
+      class="hero hero-slide hero-slide-campaign hero-slide-emerald"
+      data-hero-slide="2"
+      data-hero-theme="emerald"
+      aria-hidden="true"
+      aria-label="3 of 6"
+      inert
+    >
+      <div class="hero-copy">
+        <span class="eyebrow">Kanjivaram stories, woven in gold</span>
+
+        <h1>
+          Celebrate Every Festival
+          <em>in Emerald Grace.</em>
+        </h1>
+
+        <p>
+          Rich silk, traditional zari and timeless colour for unforgettable
+          occasions.
+        </p>
+
+        <div class="hero-actions">
+          <a
+            class="button primary"
+            href="#collections"
+            onclick="openHeroCollection(event, 'kanjivaram')"
+          >Explore Kanjivaram</a>
+        </div>
+      </div>
+    </article>
+
+    <article
+      id="heroSlideMustard"
+      class="hero hero-slide hero-slide-campaign hero-slide-mustard"
+      data-hero-slide="3"
+      data-hero-theme="mustard"
+      aria-hidden="true"
+      aria-label="4 of 6"
+      inert
+    >
+      <div class="hero-copy">
+        <span class="eyebrow">Handloom comfort for beautiful everyday moments</span>
+
+        <h1>
+          Sunshine Woven
+          <em>into Every Drape.</em>
+        </h1>
+
+        <p>
+          Breathable cotton and handcrafted detail for effortless everyday
+          style.
+        </p>
+
+        <div class="hero-actions">
+          <a
+            class="button primary"
+            href="#collections"
+            onclick="openHeroCollection(event, 'handloom')"
+          >Shop Handlooms</a>
+        </div>
+      </div>
+    </article>
+
+    <article
+      id="heroSlideLavender"
+      class="hero hero-slide hero-slide-campaign hero-slide-lavender"
+      data-hero-slide="4"
+      data-hero-theme="lavender"
+      aria-hidden="true"
+      aria-label="5 of 6"
+      inert
+    >
+      <div class="hero-copy">
+        <span class="eyebrow">Soft shimmer for evenings worth remembering</span>
+
+        <h1>
+          Float into
+          <em>Celebration.</em>
+        </h1>
+
+        <p>
+          Dreamy organza, delicate detail and graceful colour made for modern
+          occasions.
+        </p>
+
+        <div class="hero-actions">
+          <a
+            class="button primary"
+            href="#collections"
+            onclick="openHeroCollection(event, 'organza')"
+          >Explore Organza</a>
+        </div>
+      </div>
+    </article>
+
+    <article
+      id="heroSlideIvory"
+      class="hero hero-slide hero-slide-campaign hero-slide-ivory"
+      data-hero-slide="5"
+      data-hero-theme="ivory"
+      aria-hidden="true"
+      aria-label="6 of 6"
+      inert
+    >
+      <div class="hero-copy">
+        <span class="eyebrow">Timeless Banarasi for meaningful moments</span>
+
+        <h1>
+          A Wedding Classic
+          <em>in Ivory &amp; Gold.</em>
+        </h1>
+
+        <p>
+          Luminous silk and heritage zari designed for ceremonies,
+          celebrations and heirloom memories.
+        </p>
+
+        <div class="hero-actions">
+          <a
+            class="button primary"
+            href="#collections"
+            onclick="openHeroCollection(event, 'banarasi')"
+          >View Banarasi</a>
         </div>
       </div>
     </article>
@@ -275,6 +405,46 @@
         aria-controls="heroSlideEveryday"
         aria-selected="false"
         onclick="setHeroSlide(1)"
+      ></button>
+
+      <button
+        type="button"
+        class="hero-carousel-dot"
+        role="tab"
+        aria-label="Show emerald Kanjivaram slide"
+        aria-controls="heroSlideEmerald"
+        aria-selected="false"
+        onclick="setHeroSlide(2)"
+      ></button>
+
+      <button
+        type="button"
+        class="hero-carousel-dot"
+        role="tab"
+        aria-label="Show mustard handloom slide"
+        aria-controls="heroSlideMustard"
+        aria-selected="false"
+        onclick="setHeroSlide(3)"
+      ></button>
+
+      <button
+        type="button"
+        class="hero-carousel-dot"
+        role="tab"
+        aria-label="Show lavender organza slide"
+        aria-controls="heroSlideLavender"
+        aria-selected="false"
+        onclick="setHeroSlide(4)"
+      ></button>
+
+      <button
+        type="button"
+        class="hero-carousel-dot"
+        role="tab"
+        aria-label="Show ivory Banarasi slide"
+        aria-controls="heroSlideIvory"
+        aria-selected="false"
+        onclick="setHeroSlide(5)"
       ></button>
     </div>
 
@@ -835,7 +1005,7 @@
   <div id="productDetailContent"></div>
 </section>
 
-<script src="script.js?v=carousel-about-20260830"></script>
+<script src="script.js?v=six-hero-slides-20260830"></script>
 
 </body>
 </html>

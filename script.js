@@ -622,6 +622,28 @@ function showSareeTypes() {
     });
 }
 
+function openHeroCollection(event, typeId) {
+  event?.preventDefault();
+
+  const category =
+    getSareeCategories()
+      .find(item => item.id === typeId);
+
+  if (category) {
+    selectSareeCategory(typeId);
+    return;
+  }
+
+  showSareeTypes();
+
+  document
+    .getElementById("collections")
+    ?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+}
+
 // ==========================================
 // HEADER PRODUCT SEARCH
 // ==========================================
@@ -3716,14 +3738,25 @@ function setHeroSlide(
       slides.length
     ) % slides.length;
 
-  document
-    .querySelector(
+  const carousel =
+    document.querySelector(
       ".hero-carousel"
-    )
-    ?.classList.toggle(
-      "is-everyday-active",
-      activeHeroSlide === 1
     );
+
+  const activeTheme =
+    slides[activeHeroSlide]
+      ?.dataset.heroTheme ||
+    "royal";
+
+  if (carousel) {
+    carousel.dataset.activeTheme =
+      activeTheme;
+
+    carousel.classList.toggle(
+      "is-everyday-active",
+      activeTheme === "everyday"
+    );
+  }
 
   slides.forEach(
     (slide, index) => {
@@ -4020,6 +4053,9 @@ window.addProductDetailToCart =
 
 window.addWishlistItemToCart =
   addWishlistItemToCart;
+
+window.openHeroCollection =
+  openHeroCollection;
 
 window.setHeroSlide =
   setHeroSlide;

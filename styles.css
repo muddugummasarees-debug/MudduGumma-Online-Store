@@ -2213,6 +2213,226 @@ footer{
   }
 }
 
+
+/* =====================================================
+   SIX-SLIDE SAREE CAMPAIGN THEMES — 2026-08-30
+===================================================== */
+#home.hero-carousel{
+  --carousel-accent:#9f4052;
+  --carousel-accent-rgb:159 64 82;
+}
+
+#home.hero-carousel[data-active-theme="everyday"]{
+  --carousel-accent:#2f7e88;
+  --carousel-accent-rgb:47 126 136;
+}
+
+#home.hero-carousel[data-active-theme="emerald"]{
+  --carousel-accent:#26704c;
+  --carousel-accent-rgb:38 112 76;
+  background:#f5f4df;
+  border-bottom-color:rgba(38,112,76,.20);
+}
+
+#home.hero-carousel[data-active-theme="mustard"]{
+  --carousel-accent:#b06b20;
+  --carousel-accent-rgb:176 107 32;
+  background:#fff7e7;
+  border-bottom-color:rgba(176,107,32,.22);
+}
+
+#home.hero-carousel[data-active-theme="lavender"]{
+  --carousel-accent:#86608e;
+  --carousel-accent-rgb:134 96 142;
+  background:#f7eef8;
+  border-bottom-color:rgba(134,96,142,.22);
+}
+
+#home.hero-carousel[data-active-theme="ivory"]{
+  --carousel-accent:#9c722d;
+  --carousel-accent-rgb:156 114 45;
+  background:#fff9eb;
+  border-bottom-color:rgba(156,114,45,.24);
+}
+
+#home.hero-carousel[data-active-theme] .hero-carousel-arrow{
+  border-color:rgb(var(--carousel-accent-rgb) / .22);
+  color:var(--carousel-accent);
+  background:rgba(255,253,248,.88);
+  box-shadow:0 9px 24px rgb(var(--carousel-accent-rgb) / .13);
+}
+
+#home.hero-carousel[data-active-theme] .hero-carousel-dot{
+  border-color:rgb(var(--carousel-accent-rgb) / .72);
+  background:rgba(255,253,248,.84);
+}
+
+#home.hero-carousel[data-active-theme] .hero-carousel-dot.is-active{
+  border-color:var(--carousel-accent);
+  background:var(--carousel-accent);
+}
+
+#home.hero-carousel[data-active-theme] .hero-carousel-pause{
+  color:var(--carousel-accent);
+  background:rgba(255,253,248,.84);
+}
+
+#home .hero-slide-campaign{
+  min-height:clamp(560px,calc(100vh - 82px),780px);
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+}
+
+#home .hero-slide-emerald{
+  background-image:
+    linear-gradient(90deg,rgba(252,250,236,.99) 0%,rgba(252,250,236,.92) 29%,rgba(252,250,236,.54) 45%,rgba(252,250,236,.08) 60%,rgba(252,250,236,0) 73%),
+    url("/assets/hero-emerald-kanjivaram.webp?v=1")!important;
+}
+
+#home .hero-slide-emerald h1{
+  color:#23523d;
+}
+
+#home .hero-slide-emerald h1 em{
+  color:#2d7650;
+}
+
+#home .hero-slide-emerald .eyebrow{
+  color:#927035;
+}
+
+#home .hero-slide-emerald .button.primary{
+  background:linear-gradient(135deg,#318159,#1f5a3d);
+  box-shadow:0 14px 30px rgba(31,90,61,.22);
+}
+
+#home .hero-slide-emerald .button.primary:hover{
+  background:linear-gradient(135deg,#286f4b,#184b33);
+}
+
+#home .hero-slide-mustard{
+  background-image:
+    linear-gradient(90deg,rgba(255,250,239,.99) 0%,rgba(255,250,239,.92) 29%,rgba(255,250,239,.53) 45%,rgba(255,250,239,.08) 60%,rgba(255,250,239,0) 73%),
+    url("/assets/hero-mustard-handloom.webp?v=1")!important;
+}
+
+#home .hero-slide-mustard h1{
+  color:#6d4123;
+}
+
+#home .hero-slide-mustard h1 em{
+  color:#b36c25;
+}
+
+#home .hero-slide-mustard .eyebrow{
+  color:#a36a25;
+}
+
+#home .hero-slide-mustard .button.primary{
+  background:linear-gradient(135deg,#c17a29,#9b541b);
+  box-shadow:0 14px 30px rgba(155,84,27,.22);
+}
+
+#home .hero-slide-mustard .button.primary:hover{
+  background:linear-gradient(135deg,#aa651f,#824514);
+}
+
+#home .hero-slide-lavender{
+  background-image:
+    linear-gradient(90deg,rgba(251,247,251,.99) 0%,rgba(251,247,251,.92) 29%,rgba(251,247,251,.54) 45%,rgba(251,247,251,.08) 60%,rgba(251,247,251,0) 73%),
+    url("/assets/hero-lavender-organza.webp?v=1")!important;
+}
+
+#home .hero-slide-lavender h1{
+  color:#59405f;
+}
+
+#home .hero-slide-lavender h1 em{
+  color:#956b9d;
+}
+
+#home .hero-slide-lavender .eyebrow{
+  color:#86608e;
+}
+
+#home .hero-slide-lavender .button.primary{
+  background:linear-gradient(135deg,#9a72a2,#704f78);
+  box-shadow:0 14px 30px rgba(112,79,120,.22);
+}
+
+#home .hero-slide-lavender .button.primary:hover{
+  background:linear-gradient(135deg,#87628f,#5e4165);
+}
+
+#home .hero-slide-ivory{
+  background-image:
+    linear-gradient(90deg,rgba(255,250,237,.99) 0%,rgba(255,250,237,.93) 29%,rgba(255,250,237,.56) 45%,rgba(255,250,237,.09) 60%,rgba(255,250,237,0) 73%),
+    url("/assets/hero-ivory-banarasi.webp?v=1")!important;
+}
+
+#home .hero-slide-ivory h1{
+  color:#654936;
+}
+
+#home .hero-slide-ivory h1 em{
+  color:#a47934;
+}
+
+#home .hero-slide-ivory .eyebrow{
+  color:#9b7437;
+}
+
+#home .hero-slide-ivory .button.primary{
+  background:linear-gradient(135deg,#b1873e,#8d6425);
+  box-shadow:0 14px 30px rgba(141,100,37,.22);
+}
+
+#home .hero-slide-ivory .button.primary:hover{
+  background:linear-gradient(135deg,#9e7532,#76521d);
+}
+
+@media(max-width:900px){
+  #home .hero-slide-campaign{
+    background-position:68% center!important;
+  }
+
+  #home .hero-slide-campaign .hero-copy{
+    border:1px solid rgb(var(--carousel-accent-rgb) / .16);
+    background:rgba(255,252,247,.90);
+    box-shadow:0 18px 50px rgb(var(--carousel-accent-rgb) / .13);
+    backdrop-filter:blur(5px);
+  }
+}
+
+@media(max-width:560px){
+  #home .hero-slide-campaign{
+    min-height:710px;
+    background-position:66% top!important;
+  }
+
+  #home .hero-slide-campaign .hero-copy{
+    padding:23px 19px;
+  }
+
+  #home .hero-slide-campaign h1{
+    font-size:clamp(42px,13vw,58px);
+  }
+
+  #home .hero-carousel-dots{
+    gap:7px;
+  }
+
+  #home .hero-carousel-dot{
+    width:9px;
+    height:9px;
+  }
+
+  #home .hero-carousel-dot.is-active{
+    width:22px;
+  }
+}
+
 /* =====================================================
    PRODUCT DETAILS AND WISHLIST
 ===================================================== */
