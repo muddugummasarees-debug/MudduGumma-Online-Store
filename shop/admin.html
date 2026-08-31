@@ -185,6 +185,14 @@ th,td{border-color:rgba(143,64,80,.10)}
 .admin-order-id{font-weight:800;color:var(--wine-dark);overflow-wrap:anywhere}
 .admin-order-meta,.admin-order-customer,.admin-order-items{font-size:13px;color:#6f5d64;line-height:1.55}
 .admin-order-items{margin:12px 0;padding:12px;background:#fff;border:1px solid rgba(143,64,80,.10);border-radius:12px}
+.admin-order-item{display:flex;align-items:center;gap:13px;padding:8px 0}
+.admin-order-item+.admin-order-item{border-top:1px solid rgba(143,64,80,.10)}
+.admin-order-thumb,.admin-order-thumb-placeholder{width:68px;height:84px;flex:0 0 68px;border-radius:10px}
+.admin-order-thumb{display:block;object-fit:cover;background:#f4ecee}
+.admin-order-thumb-placeholder{display:grid;place-items:center;background:linear-gradient(135deg,#f8e8ed,#efe4df);color:var(--wine);font-weight:800;font-size:12px}
+.admin-order-item-details{min-width:0}
+.admin-order-item-name{color:var(--ink);font-weight:700;line-height:1.35}
+.admin-order-item-meta{margin-top:4px;color:#7b6870;font-size:12px}
 .admin-order-controls{display:grid;grid-template-columns:220px 1fr auto;gap:10px;align-items:end;margin-top:12px}
 .admin-order-controls label{margin:0}
 .admin-order-controls input,.admin-order-controls select{margin-top:6px}
@@ -862,14 +870,22 @@ async function loadOrders(){
     ).join('');
 
     const itemLines=items.length
-      ? items.map(item=>
-          '<div>'+
-            esc(item.name||'Item')+
-            ' × '+Math.max(1,Number(item.quantity||1))+
-            (item.color?' · '+esc(item.color):'')+
-            (item.size?' · '+esc(item.size):'')+
-          '</div>'
-        ).join('')
+      ? items.map(item=>{
+          const image=String(item.image||'').trim();
+          const name=String(item.name||'Item');
+          const quantity=Math.max(1,Number(item.quantity||1));
+          const variant=[item.color,item.size].filter(Boolean).map(esc).join(' · ');
+
+          return '<div class="admin-order-item">'+
+            (image
+              ? '<img class="admin-order-thumb" src="'+esc(image)+'" alt="'+esc(name)+'" loading="lazy">'
+              : '<div class="admin-order-thumb-placeholder" aria-hidden="true">MG</div>')+
+            '<div class="admin-order-item-details">'+
+              '<div class="admin-order-item-name">'+esc(name)+' × '+quantity+'</div>'+
+              (variant?'<div class="admin-order-item-meta">'+variant+'</div>':'')+
+            '</div>'+
+          '</div>';
+        }).join('')
       : '<div>No item details available.</div>';
 
     return `

@@ -843,6 +843,35 @@ export default {
           LIMIT 250
         `).all();
 
+        const productResult =
+          await env.DB
+            .prepare(`
+              SELECT id, image, images
+              FROM products
+            `)
+            .all();
+
+        const productImageById =
+          new Map(
+            (productResult.results || [])
+              .map(product => {
+                const images =
+                  safeJsonArray(
+                    product.images
+                  );
+
+                return [
+                  String(product.id),
+                  cleanText(
+                    product.image ||
+                    images[0] ||
+                    "",
+                    2000
+                  )
+                ];
+              })
+          );
+
         return json({
           orders: (result.results || []).map(order => ({
             id: order.id,
@@ -850,7 +879,30 @@ export default {
             razorpayOrderId: order.razorpay_order_id,
             razorpayPaymentId: order.razorpay_payment_id,
             amount: Number(order.amount || 0),
-            items: safeJsonArray(order.items),
+            items:
+              safeJsonArray(order.items)
+                .map(item => {
+                  const safeItem =
+                    item &&
+                    typeof item === "object"
+                      ? item
+                      : {};
+
+                  return {
+                    ...safeItem,
+                    image:
+                      cleanText(
+                        safeItem.image,
+                        2000
+                      ) ||
+                      productImageById.get(
+                        String(
+                          safeItem.id || ""
+                        )
+                      ) ||
+                      ""
+                  };
+                }),
             customer: safeJsonObject(order.customer),
             status: order.status || "created",
             createdAt: order.created_at,
@@ -1630,6 +1682,8 @@ export default {
                 SELECT
                   id,
                   name,
+                  image,
+                  images,
                   price,
                   stock,
                   variants
@@ -1727,6 +1781,16 @@ export default {
 
             name:
               row.name,
+
+            image:
+              cleanText(
+                row.image ||
+                safeJsonArray(
+                  row.images
+                )[0] ||
+                "",
+                2000
+              ),
 
             price,
 
