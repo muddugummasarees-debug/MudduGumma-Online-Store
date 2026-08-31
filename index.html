@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="styles.css?v=direct-collections-20260831" />
+  <link rel="stylesheet" href="styles.css?v=product-image-zoom-20260831" />
 </head>
 
 <body>
@@ -1005,7 +1005,76 @@
   <div id="productDetailContent"></div>
 </section>
 
-<script src="script.js?v=six-hero-slides-20260830"></script>
+<!-- FULL-SCREEN PRODUCT IMAGE ZOOM -->
+
+<div
+  id="productImageZoomOverlay"
+  class="product-image-zoom-overlay"
+  aria-hidden="true"
+  onclick="if (event.target === this) closeProductImageZoom()"
+>
+  <section
+    class="product-image-zoom-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="productImageZoomTitle"
+  >
+    <header class="product-image-zoom-header">
+      <div>
+        <span id="productImageZoomTitle">Saree photo</span>
+        <strong id="productImageZoomLevel">100%</strong>
+      </div>
+
+      <div class="product-image-zoom-controls" aria-label="Image zoom controls">
+        <button
+          id="productImageZoomOut"
+          type="button"
+          onclick="changeProductImageZoom(-0.5)"
+          aria-label="Zoom out"
+          title="Zoom out"
+        >−</button>
+
+        <button
+          type="button"
+          onclick="resetProductImageZoom()"
+          aria-label="Reset zoom to 100 percent"
+          title="Reset zoom"
+        >100%</button>
+
+        <button
+          id="productImageZoomIn"
+          type="button"
+          onclick="changeProductImageZoom(0.5)"
+          aria-label="Zoom in"
+          title="Zoom in"
+        >+</button>
+
+        <button
+          class="product-image-zoom-close"
+          type="button"
+          onclick="closeProductImageZoom()"
+          aria-label="Close enlarged photo"
+          title="Close enlarged photo"
+        >×</button>
+      </div>
+    </header>
+
+    <div id="productImageZoomStage" class="product-image-zoom-stage">
+      <img
+        id="productImageZoomImage"
+        src=""
+        alt=""
+        onclick="toggleProductImageZoom()"
+      >
+    </div>
+
+    <p class="product-image-zoom-help">
+      Use + and − to inspect the fabric, border and work. Tap the photo to zoom quickly.
+    </p>
+  </section>
+</div>
+
+<script src="script.js?v=product-image-zoom-20260831"></script>
 
 </body>
 </html>

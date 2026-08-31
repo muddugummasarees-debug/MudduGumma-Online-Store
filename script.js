@@ -22,6 +22,7 @@ let storeProducts = [];
 let cart = [];
 let wishlist = [];
 let activeSareeType = "";
+let productImageZoomLevel = 1;
 
 const productFilterState = {
   search: "",
@@ -2853,12 +2854,27 @@ function openProductDetail(productId) {
       <div class="product-detail-gallery">
         ${mainImage
           ? `
-            <img
-              id="productDetailMainImage"
-              class="product-detail-main-image"
-              src="${escapeAttribute(mainImage)}"
-              alt="${escapeHTML(product.name)}"
+            <button
+              type="button"
+              class="product-detail-image-button"
+              onclick="openProductImageZoom()"
+              aria-label="Enlarge ${escapeAttribute(product.name)} photo"
             >
+              <img
+                id="productDetailMainImage"
+                class="product-detail-main-image"
+                src="${escapeAttribute(mainImage)}"
+                alt="${escapeHTML(product.name)}"
+              >
+
+              <span class="product-detail-zoom-label" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                  <path d="M15.5 15.5L21 21M10.5 7.5V13.5M7.5 10.5H13.5"></path>
+                </svg>
+                Zoom photo
+              </span>
+            </button>
           `
           : `
             <div class="product-detail-no-image">
@@ -3085,6 +3101,7 @@ function closeProductDetail() {
   const overlay =
     document.getElementById("productDetailOverlay");
 
+  closeProductImageZoom();
   modal?.classList.remove("open");
   overlay?.classList.remove("show");
   modal?.setAttribute("aria-hidden", "true");
@@ -3093,6 +3110,105 @@ function closeProductDetail() {
     ?.classList.contains("open")) {
     document.body.style.overflow = "";
   }
+}
+
+
+function updateProductImageZoom() {
+  const image =
+    document.getElementById("productImageZoomImage");
+  const levelLabel =
+    document.getElementById("productImageZoomLevel");
+  const zoomOut =
+    document.getElementById("productImageZoomOut");
+  const zoomIn =
+    document.getElementById("productImageZoomIn");
+
+  const percentage =
+    Math.round(productImageZoomLevel * 100);
+
+  if (image) {
+    image.style.width = `${percentage}%`;
+  }
+
+  if (levelLabel) {
+    levelLabel.textContent = `${percentage}%`;
+  }
+
+  if (zoomOut) {
+    zoomOut.disabled = productImageZoomLevel <= 1;
+  }
+
+  if (zoomIn) {
+    zoomIn.disabled = productImageZoomLevel >= 4;
+  }
+}
+
+
+function openProductImageZoom() {
+  const mainImage =
+    document.getElementById("productDetailMainImage");
+  const overlay =
+    document.getElementById("productImageZoomOverlay");
+  const zoomImage =
+    document.getElementById("productImageZoomImage");
+  const stage =
+    document.getElementById("productImageZoomStage");
+
+  if (!mainImage || !overlay || !zoomImage) {
+    return;
+  }
+
+  zoomImage.src = mainImage.currentSrc || mainImage.src;
+  zoomImage.alt = `${mainImage.alt} enlarged photo`;
+  productImageZoomLevel = 1;
+  stage?.scrollTo(0, 0);
+  updateProductImageZoom();
+
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden", "false");
+  overlay
+    .querySelector(".product-image-zoom-close")
+    ?.focus();
+}
+
+
+function closeProductImageZoom() {
+  const overlay =
+    document.getElementById("productImageZoomOverlay");
+
+  overlay?.classList.remove("open");
+  overlay?.setAttribute("aria-hidden", "true");
+  productImageZoomLevel = 1;
+}
+
+
+function changeProductImageZoom(change) {
+  productImageZoomLevel = Math.min(
+    4,
+    Math.max(
+      1,
+      Number((productImageZoomLevel + change).toFixed(2))
+    )
+  );
+
+  updateProductImageZoom();
+}
+
+
+function resetProductImageZoom() {
+  productImageZoomLevel = 1;
+  updateProductImageZoom();
+
+  document
+    .getElementById("productImageZoomStage")
+    ?.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+}
+
+
+function toggleProductImageZoom() {
+  productImageZoomLevel =
+    productImageZoomLevel > 1 ? 1 : 2;
+  updateProductImageZoom();
 }
 
 
@@ -4048,6 +4164,21 @@ window.closeProductDetail =
 window.setProductDetailImage =
   setProductDetailImage;
 
+window.openProductImageZoom =
+  openProductImageZoom;
+
+window.closeProductImageZoom =
+  closeProductImageZoom;
+
+window.changeProductImageZoom =
+  changeProductImageZoom;
+
+window.resetProductImageZoom =
+  resetProductImageZoom;
+
+window.toggleProductImageZoom =
+  toggleProductImageZoom;
+
 window.addProductDetailToCart =
   addProductDetailToCart;
 
@@ -4093,6 +4224,14 @@ document.addEventListener("click", event => {
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
+    const zoomOverlay =
+      document.getElementById("productImageZoomOverlay");
+
+    if (zoomOverlay?.classList.contains("open")) {
+      closeProductImageZoom();
+      return;
+    }
+
     closeProductDetail();
     closeWishlist();
     closeHeaderSearch();
@@ -4110,3 +4249,4 @@ renderCart();
 renderWishlist();
 setupHeroCarousel();
 loadProducts();
+
