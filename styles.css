@@ -6106,3 +6106,54 @@ footer{
   height:24px;
 }
 
+
+/* =====================================================
+   CUSTOMER POLICY LINKS — RAZORPAY WEBSITE READINESS
+===================================================== */
+
+.footer-policy-links{
+  grid-column:1 / -1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:11px 24px;
+  width:100%;
+  margin-top:8px;
+  padding-top:24px;
+  border-top:1px solid rgba(255,255,255,.13);
+  font-size:10px;
+  letter-spacing:.075em;
+  line-height:1.5;
+}
+
+.footer-policy-links a{
+  color:#ead7dd;
+  text-decoration:underline;
+  text-decoration-color:rgba(234,215,221,.32);
+  text-underline-offset:4px;
+  transition:color .2s ease,text-decoration-color .2s ease;
+}
+
+.footer-policy-links a:hover,
+.footer-policy-links a:focus-visible{
+  color:#fff;
+  text-decoration-color:#f5c5d4;
+}
+
+@media(max-width:900px){
+  .footer-policy-links{
+    grid-column:auto;
+    margin-top:4px;
+  }
+}
+
+@media(max-width:620px){
+  .footer-policy-links{
+    flex-direction:column;
+    gap:13px;
+    padding-top:22px;
+    font-size:10px;
+  }
+}
+
